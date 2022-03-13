@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"database/sql"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -32,6 +34,20 @@ func (config *Config) ArnFragment() string {
 	return config.Region + ":" + config.AccountNumber
 }
 
+func (config *Config) CreateDatabase() *sql.DB {
+	db, err := sql.Open("sqlite3", config.DbConnectionString())
+	if err != nil {
+		log.Panicf("unable to open database: %v", err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		log.Panicf("unable to ping database: %v", err)
+	}
+
+	return db
+}
+
 func (config *Config) DataPath() string {
 	if config.dataPath[0] == '/' {
 		return config.dataPath
@@ -50,6 +66,13 @@ func (config *Config) DbConnectionString() string {
 }
 
 func DefaultConfig() *Config {
+	logger.Debugf("Creating directory %s if necessary ...", DefaultDataPath)
+
+	err := os.MkdirAll(DefaultDataPath, 0755)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Config{
 		AccountNumber: DefaultAccountNumber,
 		IsDebug:       false,

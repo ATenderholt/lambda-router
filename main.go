@@ -2,15 +2,22 @@ package main
 
 import (
 	"context"
+	"embed"
 	"github.com/ATenderholt/lambda-router/logging"
 	"github.com/ATenderholt/lambda-router/settings"
+	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
 	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var logger *zap.SugaredLogger
+
+//go:embed migrations/*.sql
+var embedMigrations embed.FS
 
 func init() {
 	logger = logging.NewLogger()
@@ -38,7 +45,8 @@ func main() {
 func start(ctx context.Context, config *settings.Config) error {
 	logger.Info("Starting up ...")
 
-	//initializeDb(config)
+	initializeDb(config)
+
 	//initializeDocker(ctx)
 	//server, err := http.Serve(config)
 	//if err != nil {
@@ -65,4 +73,19 @@ func start(ctx context.Context, config *settings.Config) error {
 	//}
 
 	return nil
+}
+
+func initializeDb(config *settings.Config) {
+	db := config.CreateDatabase()
+
+	goose.SetBaseFS(embedMigrations)
+	goose.SetLogger(logging.GooseLogger{logger})
+
+	if err := goose.SetDialect("sqlite3"); err != nil {
+		panic(err)
+	}
+
+	if err := goose.Up(db, "migrations"); err != nil {
+		panic(err)
+	}
 }
