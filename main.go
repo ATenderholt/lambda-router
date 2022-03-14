@@ -77,6 +77,7 @@ func start(ctx context.Context, config *settings.Config) error {
 
 func initializeDb(config *settings.Config) {
 	db := config.CreateDatabase()
+	defer db.Close()
 
 	goose.SetBaseFS(embedMigrations)
 	goose.SetLogger(logging.GooseLogger{logger})
