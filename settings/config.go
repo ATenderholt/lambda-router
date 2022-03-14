@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	configContextKey = contextKey("config")
-
 	DefaultAccountNumber = "271828182845"
 	DefaultRegion        = "us-west-2"
 
@@ -17,8 +15,6 @@ const (
 
 	DefaultLambdaPort = 9002
 )
-
-type contextKey string
 
 type Config struct {
 	AccountNumber string
