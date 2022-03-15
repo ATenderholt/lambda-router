@@ -6,11 +6,21 @@ import (
 	"log"
 )
 
-type Database struct {
+type Database interface {
+	BeginTx(ctx context.Context) (Transaction, error)
+	Close()
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error)
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+}
+
+type RealDatabase struct {
 	wrapped *sql.DB
 }
 
-func CreateConnection(connStr string) *Database {
+func CreateConnection(connStr string) Database {
 	db, err := sql.Open("sqlite3", connStr)
 	if err != nil {
 		log.Panicf("unable to open database: %v", err)
@@ -21,27 +31,29 @@ func CreateConnection(connStr string) *Database {
 		log.Panicf("unable to ping database: %v", err)
 	}
 
-	return &Database{db}
+	var database Database = RealDatabase{db}
+	return database
 }
 
-func (db *Database) Close() {
+func (db RealDatabase) Close() {
 	err := db.wrapped.Close()
 	if err != nil {
 		log.Panicf("unable to close database: %v", err)
 	}
 }
 
-func (db *Database) BeginTx(ctx context.Context) (*Transaction, error) {
+func (db RealDatabase) BeginTx(ctx context.Context) (Transaction, error) {
 	options := sql.TxOptions{Isolation: sql.LevelDefault, ReadOnly: false}
 	tx, err := db.wrapped.BeginTx(ctx, &options)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Transaction{tx}, nil
+	var transaction Transaction = RealTransaction{tx}
+	return transaction, nil
 }
 
-func (db *Database) InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (db RealDatabase) InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	insert, err := db.wrapped.ExecContext(ctx, query, args...)
 	if err != nil {
 		debug := buildDebug(query, args)
@@ -69,22 +81,22 @@ func (db *Database) InsertOne(ctx context.Context, query string, args ...interfa
 	return id, nil
 }
 
-func (db *Database) Exec(query string, args ...interface{}) (sql.Result, error) {
+func (db RealDatabase) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return db.wrapped.Exec(query, args...)
 }
 
-func (db *Database) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
+func (db RealDatabase) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	return db.wrapped.QueryContext(ctx, query, args...)
 }
 
-func (db *Database) QueryRow(query string, args ...interface{}) *sql.Row {
+func (db RealDatabase) QueryRow(query string, args ...interface{}) *sql.Row {
 	return db.wrapped.QueryRow(query, args...)
 }
 
-func (db *Database) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
+func (db RealDatabase) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	return db.wrapped.QueryRowContext(ctx, query, args...)
 }
 
-func (db *Database) Wrapped() *sql.DB {
+func (db *RealDatabase) Wrapped() *sql.DB {
 	return db.wrapped
 }

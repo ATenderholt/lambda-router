@@ -6,19 +6,26 @@ import (
 	"fmt"
 )
 
-type Transaction struct {
+type Transaction interface {
+	Commit() error
+	InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error)
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
+	Rollback(format string, v ...interface{}) string
+}
+
+type RealTransaction struct {
 	wrapped *sql.Tx
 }
 
-func (tx *Transaction) Commit() error {
+func (tx RealTransaction) Commit() error {
 	return tx.wrapped.Commit()
 }
 
-func (tx *Transaction) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+func (tx RealTransaction) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
 	return tx.wrapped.PrepareContext(ctx, query)
 }
 
-func (tx *Transaction) Rollback(format string, v ...interface{}) string {
+func (tx RealTransaction) Rollback(format string, v ...interface{}) string {
 	err := tx.wrapped.Rollback()
 	msg := fmt.Sprintf(format, v...)
 	if err != nil {
@@ -28,7 +35,7 @@ func (tx *Transaction) Rollback(format string, v ...interface{}) string {
 	return msg
 }
 
-func (tx *Transaction) InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error) {
+func (tx RealTransaction) InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	insert, err := tx.wrapped.ExecContext(ctx, query, args...)
 	if err != nil {
 		debug := buildDebug(query, args)
