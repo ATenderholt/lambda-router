@@ -30,8 +30,8 @@ func stringOrEmpty(p *string) string {
 	return *p
 }
 
-const timeFormat = "2006-01-02T15:04:05.999-0700"
+const TimeFormat = "2006-01-02T15:04:05.999-0700"
 
 func timeMillisToString(ms int64) string {
-	return time.UnixMilli(ms).Format(timeFormat)
+	return time.UnixMilli(ms).Format(TimeFormat)
 }
