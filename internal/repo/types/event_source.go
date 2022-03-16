@@ -1,7 +1,7 @@
 package types
 
 import (
-	"context"
+	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/google/uuid"
 	"time"
@@ -17,7 +17,7 @@ type EventSource struct {
 	LastModified int64
 }
 
-func (eventSource EventSource) ToCreateEventSourceMappingOutput(ctx context.Context) lambda.CreateEventSourceMappingOutput {
+func (eventSource EventSource) ToCreateEventSourceMappingOutput(cfg *settings.Config) lambda.CreateEventSourceMappingOutput {
 	id := eventSource.UUID.String()
 	lastModified := time.UnixMilli(eventSource.LastModified)
 	state := "Enabled"
@@ -28,7 +28,7 @@ func (eventSource EventSource) ToCreateEventSourceMappingOutput(ctx context.Cont
 		DestinationConfig:              nil,
 		EventSourceArn:                 &eventSource.Arn,
 		FilterCriteria:                 nil,
-		FunctionArn:                    eventSource.Function.GetArn(ctx),
+		FunctionArn:                    eventSource.Function.GetArn(cfg),
 		FunctionResponseTypes:          nil,
 		LastModified:                   &lastModified,
 		LastProcessingResult:           nil,
@@ -49,7 +49,7 @@ func (eventSource EventSource) ToCreateEventSourceMappingOutput(ctx context.Cont
 	}
 }
 
-func (eventSource EventSource) ToGetEventSourceMappingOutput(ctx context.Context) lambda.GetEventSourceMappingOutput {
+func (eventSource EventSource) ToGetEventSourceMappingOutput(cfg *settings.Config) lambda.GetEventSourceMappingOutput {
 	id := eventSource.UUID.String()
 	lastModified := time.UnixMilli(eventSource.LastModified)
 	state := "Enabled"
@@ -60,7 +60,7 @@ func (eventSource EventSource) ToGetEventSourceMappingOutput(ctx context.Context
 		DestinationConfig:              nil,
 		EventSourceArn:                 &eventSource.Arn,
 		FilterCriteria:                 nil,
-		FunctionArn:                    eventSource.Function.GetArn(ctx),
+		FunctionArn:                    eventSource.Function.GetArn(cfg),
 		FunctionResponseTypes:          nil,
 		LastModified:                   &lastModified,
 		LastProcessingResult:           nil,

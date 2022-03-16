@@ -11,9 +11,8 @@ const (
 	DefaultAccountNumber = "271828182845"
 	DefaultRegion        = "us-west-2"
 
+	DefaultBasePort = 9050
 	DefaultDataPath = "data"
-
-	DefaultLambdaPort = 9002
 )
 
 type Config struct {
@@ -23,6 +22,7 @@ type Config struct {
 
 	Database *Database
 
+	BasePort int
 	dataPath string
 }
 
@@ -74,6 +74,7 @@ func DefaultConfig() *Config {
 		IsDebug:       false,
 		Region:        DefaultRegion,
 		Database:      DefaultDatabase(),
+		BasePort:      DefaultBasePort,
 		dataPath:      DefaultDataPath,
 	}
 }

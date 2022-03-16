@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"github.com/ATenderholt/lambda-router/internal/http"
 	"github.com/ATenderholt/lambda-router/logging"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/pressly/goose/v3"
@@ -48,24 +49,24 @@ func start(ctx context.Context, config *settings.Config) error {
 	initializeDb(config)
 
 	//initializeDocker(ctx)
-	//server, err := http.Serve(config)
-	//if err != nil {
-	//	panic(err)
-	//}
+	server, err := http.Serve(config)
+	if err != nil {
+		panic(err)
+	}
 
 	<-ctx.Done()
 
 	logger.Info("Shutting down ...")
 
-	_, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctxShutDown, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer func() {
 		cancel()
 	}()
 
-	//err = server.Shutdown(ctxShutDown)
-	//if err != nil {
-	//	logger.Error("Error when shutting down HTTP server")
-	//}
+	err = server.Shutdown(ctxShutDown)
+	if err != nil {
+		logger.Error("Error when shutting down HTTP server")
+	}
 	//
 	//err = docker.ShutdownAll(ctxShutDown)
 	//if err != nil {

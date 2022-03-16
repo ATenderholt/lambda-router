@@ -93,7 +93,7 @@ func CreateFunction(input *lambda.CreateFunctionInput) *Function {
 }
 
 func (f Function) ToCreateFunctionOutput(cfg *settings.Config) *lambda.CreateFunctionOutput {
-	lastModified := time.UnixMilli(f.LastModified).Format(timeFormat)
+	lastModified := time.UnixMilli(f.LastModified).Format(TimeFormat)
 
 	return &lambda.CreateFunctionOutput{
 		Architectures:    nil,

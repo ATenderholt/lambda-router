@@ -17,7 +17,7 @@ type Database interface {
 }
 
 type RealDatabase struct {
-	wrapped *sql.DB
+	Wrapped *sql.DB
 }
 
 func CreateConnection(connStr string) Database {
@@ -36,7 +36,7 @@ func CreateConnection(connStr string) Database {
 }
 
 func (db RealDatabase) Close() {
-	err := db.wrapped.Close()
+	err := db.Wrapped.Close()
 	if err != nil {
 		log.Panicf("unable to close database: %v", err)
 	}
@@ -44,7 +44,7 @@ func (db RealDatabase) Close() {
 
 func (db RealDatabase) BeginTx(ctx context.Context) (Transaction, error) {
 	options := sql.TxOptions{Isolation: sql.LevelDefault, ReadOnly: false}
-	tx, err := db.wrapped.BeginTx(ctx, &options)
+	tx, err := db.Wrapped.BeginTx(ctx, &options)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (db RealDatabase) BeginTx(ctx context.Context) (Transaction, error) {
 }
 
 func (db RealDatabase) InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error) {
-	insert, err := db.wrapped.ExecContext(ctx, query, args...)
+	insert, err := db.Wrapped.ExecContext(ctx, query, args...)
 	if err != nil {
 		debug := buildDebug(query, args)
 		logger.Errorf("Unable to insert %s: %s", debug, err)
@@ -82,21 +82,17 @@ func (db RealDatabase) InsertOne(ctx context.Context, query string, args ...inte
 }
 
 func (db RealDatabase) Exec(query string, args ...interface{}) (sql.Result, error) {
-	return db.wrapped.Exec(query, args...)
+	return db.Wrapped.Exec(query, args...)
 }
 
 func (db RealDatabase) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	return db.wrapped.QueryContext(ctx, query, args...)
+	return db.Wrapped.QueryContext(ctx, query, args...)
 }
 
 func (db RealDatabase) QueryRow(query string, args ...interface{}) *sql.Row {
-	return db.wrapped.QueryRow(query, args...)
+	return db.Wrapped.QueryRow(query, args...)
 }
 
 func (db RealDatabase) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
-	return db.wrapped.QueryRowContext(ctx, query, args...)
-}
-
-func (db *RealDatabase) Wrapped() *sql.DB {
-	return db.wrapped
+	return db.Wrapped.QueryRowContext(ctx, query, args...)
 }

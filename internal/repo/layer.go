@@ -18,6 +18,10 @@ type LayerRepository interface {
 	GetLatestLayerVersionByName(ctx context.Context, name string) (int, error)
 }
 
+func NewLayerRepository(db database.Database) LayerRepository {
+	return LayerRepositoryImpl{db}
+}
+
 type LayerRepositoryImpl struct {
 	db database.Database
 }
@@ -210,7 +214,7 @@ func stringToRuntimes(runtime string) []aws.Runtime {
 
 func (l LayerRepositoryImpl) GetLatestLayerVersionByName(ctx context.Context, name string) (int, error) {
 	logger.Infof("Getting latest version number for Layer %s", name)
-	
+
 	var dbName sql.NullString
 	var dbVersion sql.NullInt32
 	err := l.db.QueryRowContext(
