@@ -20,7 +20,9 @@ func Serve(cfg *settings.Config) (srv *http.Server, err error) {
 	}
 
 	r := chi.NewRouter()
+	r.Get("/2018-10-31/layers/{layerName}/versions/{layerVersion}", layerHandler.GetLayerVersion)
 	r.Get("/2018-10-31/layers/{layerName}/versions", layerHandler.GetAllLayerVersions)
+	r.Post("/2018-10-31/layers/{layerName}/versions", layerHandler.PostLayerVersions)
 
 	srv = &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),

@@ -7,7 +7,20 @@ import (
 	"github.com/ATenderholt/lambda-router/settings"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"net/http"
+	"os"
 )
+
+func createDirs(dirPath string) error {
+	logger.Debugf("Creating directory if necessary %s ...", dirPath)
+	err := os.MkdirAll(dirPath, 0755)
+	if err != nil {
+		e := fmt.Errorf("unable to create directory %s: %v", dirPath, err)
+		logger.Error(e)
+		return e
+	}
+
+	return nil
+}
 
 func layersToAwsLayers(layers []types.LambdaLayer, cfg *settings.Config) []aws.LayerVersionsListItem {
 	results := make([]aws.LayerVersionsListItem, len(layers))

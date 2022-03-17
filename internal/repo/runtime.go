@@ -9,7 +9,7 @@ import (
 
 type RuntimeRepository interface {
 	RuntimeExistsByName(ctx context.Context, runtime aws.Runtime) (bool, error)
-	RuntimeIDsByNames(ctx context.Context, db *database.Database, runtimes []aws.Runtime) (map[aws.Runtime]int, error)
+	RuntimeIDsByNames(ctx context.Context, runtimes []aws.Runtime) (map[aws.Runtime]int, error)
 }
 
 type RuntimeRepositoryImpl struct {
