@@ -16,6 +16,10 @@ type RuntimeRepositoryImpl struct {
 	db database.Database
 }
 
+func NewRuntimeRepository(db database.Database) RuntimeRepository {
+	return RuntimeRepositoryImpl{db}
+}
+
 func (r RuntimeRepositoryImpl) RuntimeExistsByName(ctx context.Context, runtime aws.Runtime) (bool, error) {
 	logger.Infof("Querying for Lambda Runtime %s.", runtime)
 	var id int

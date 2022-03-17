@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"github.com/ATenderholt/lambda-router/internal/repo/types"
 	"github.com/ATenderholt/lambda-router/pkg/database"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
@@ -13,13 +14,18 @@ type FunctionRepository interface {
 	GetEnvironmentForFunction(ctx context.Context, function types.Function) (*aws.Environment, error)
 	GetLayersForFunction(ctx context.Context, function types.Function) ([]types.LambdaLayer, error)
 	GetLatestFunctionByName(ctx context.Context, name string) (*types.Function, error)
+	GetLatestVersionForFunctionName(ctx context.Context, name string) (int, error)
 	GetVersionsForFunctionName(ctx context.Context, name string) ([]types.Function, error)
-	InsertFunction(ctx context.Context, function types.Function) (*types.Function, error)
+	InsertFunction(ctx context.Context, function *types.Function) (*types.Function, error)
 	UpsertFunctionEnvironment(ctx context.Context, function *types.Function, environment *aws.Environment) error
 }
 
 type FunctionRepositoryImpl struct {
 	db database.Database
+}
+
+func NewFunctionRepository(db database.Database) FunctionRepository {
+	return FunctionRepositoryImpl{db}
 }
 
 func (f FunctionRepositoryImpl) GetAllLatestFunctions(ctx context.Context) ([]types.Function, error) {
@@ -202,6 +208,35 @@ func (f FunctionRepositoryImpl) GetLatestFunctionByName(ctx context.Context, nam
 	function.Environment = environment
 
 	return &function, nil
+}
+
+func (f FunctionRepositoryImpl) GetLatestVersionForFunctionName(ctx context.Context, name string) (int, error) {
+	logger.Infof("Querying for Lambda Function %s", name)
+
+	var dbName string
+	var dbVersion int
+	err := f.db.QueryRowContext(
+		ctx,
+		`SELECT name, version FROM lambda_function WHERE name = ? ORDER BY version DESC LIMIT 1`,
+		name,
+	).Scan(
+		&dbName,
+		&dbVersion,
+	)
+
+	switch {
+	case err == sql.ErrNoRows:
+		logger.Info("Lambda Function %s not found, returning version = 0.", name)
+		return 0, nil
+	case err != nil:
+		e := fmt.Errorf("error when querying function version for %s: %v", name, err)
+		logger.Error(e)
+		return -1, e
+	}
+
+	logger.Infof("... found version %d.", dbVersion)
+
+	return dbVersion, nil
 }
 
 func (f FunctionRepositoryImpl) GetVersionsForFunctionName(ctx context.Context, name string) ([]types.Function, error) {
