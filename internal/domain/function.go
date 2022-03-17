@@ -1,6 +1,7 @@
-package types
+package domain
 
 import (
+	"context"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
@@ -63,6 +64,17 @@ type Function struct {
 
 	// The version of the Lambda function.
 	Version string
+}
+
+type FunctionRepository interface {
+	GetAllLatestFunctions(ctx context.Context) ([]Function, error)
+	GetEnvironmentForFunction(ctx context.Context, function Function) (*aws.Environment, error)
+	GetLayersForFunction(ctx context.Context, function Function) ([]LambdaLayer, error)
+	GetLatestFunctionByName(ctx context.Context, name string) (*Function, error)
+	GetLatestVersionForFunctionName(ctx context.Context, name string) (int, error)
+	GetVersionsForFunctionName(ctx context.Context, name string) ([]Function, error)
+	InsertFunction(ctx context.Context, function *Function) (*Function, error)
+	UpsertFunctionEnvironment(ctx context.Context, function *Function, environment *aws.Environment) error
 }
 
 func CreateFunction(input *lambda.CreateFunctionInput) *Function {

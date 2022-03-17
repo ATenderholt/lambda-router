@@ -4,31 +4,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/ATenderholt/lambda-router/internal/repo/types"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/pkg/database"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 )
 
-type FunctionRepository interface {
-	GetAllLatestFunctions(ctx context.Context) ([]types.Function, error)
-	GetEnvironmentForFunction(ctx context.Context, function types.Function) (*aws.Environment, error)
-	GetLayersForFunction(ctx context.Context, function types.Function) ([]types.LambdaLayer, error)
-	GetLatestFunctionByName(ctx context.Context, name string) (*types.Function, error)
-	GetLatestVersionForFunctionName(ctx context.Context, name string) (int, error)
-	GetVersionsForFunctionName(ctx context.Context, name string) ([]types.Function, error)
-	InsertFunction(ctx context.Context, function *types.Function) (*types.Function, error)
-	UpsertFunctionEnvironment(ctx context.Context, function *types.Function, environment *aws.Environment) error
-}
-
-type FunctionRepositoryImpl struct {
+type FunctionRepository struct {
 	db database.Database
 }
 
-func NewFunctionRepository(db database.Database) FunctionRepository {
-	return FunctionRepositoryImpl{db}
+func NewFunctionRepository(db database.Database) domain.FunctionRepository {
+	return FunctionRepository{db}
 }
 
-func (f FunctionRepositoryImpl) GetAllLatestFunctions(ctx context.Context) ([]types.Function, error) {
+func (f FunctionRepository) GetAllLatestFunctions(ctx context.Context) ([]domain.Function, error) {
 	logger.Info("Querying for latest version of all Functions.")
 
 	rows, err := f.db.QueryContext(
@@ -36,7 +25,7 @@ func (f FunctionRepositoryImpl) GetAllLatestFunctions(ctx context.Context) ([]ty
 		`SELECT name, max(version), runtime, handler FROM lambda_function GROUP BY name`,
 	)
 
-	var results []types.Function
+	var results []domain.Function
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -49,7 +38,7 @@ func (f FunctionRepositoryImpl) GetAllLatestFunctions(ctx context.Context) ([]ty
 	}
 
 	for rows.Next() {
-		var function types.Function
+		var function domain.Function
 
 		err := rows.Scan(
 			&function.FunctionName,
@@ -75,7 +64,7 @@ func (f FunctionRepositoryImpl) GetAllLatestFunctions(ctx context.Context) ([]ty
 	return results, nil
 }
 
-func (f FunctionRepositoryImpl) GetEnvironmentForFunction(ctx context.Context, function types.Function) (*aws.Environment, error) {
+func (f FunctionRepository) GetEnvironmentForFunction(ctx context.Context, function domain.Function) (*aws.Environment, error) {
 	logger.Infof("Querying environment for Function %s.", function.FunctionName)
 
 	variables := make(map[string]string)
@@ -112,9 +101,9 @@ func (f FunctionRepositoryImpl) GetEnvironmentForFunction(ctx context.Context, f
 	return &aws.Environment{Variables: variables}, nil
 }
 
-func (f FunctionRepositoryImpl) GetLayersForFunction(ctx context.Context, function types.Function) ([]types.LambdaLayer, error) {
+func (f FunctionRepository) GetLayersForFunction(ctx context.Context, function domain.Function) ([]domain.LambdaLayer, error) {
 	logger.Infof("Querying for Layers of Function %s.", function.FunctionName)
-	var layers []types.LambdaLayer
+	var layers []domain.LambdaLayer
 
 	rows, err := f.db.QueryContext(
 		ctx,
@@ -137,7 +126,7 @@ func (f FunctionRepositoryImpl) GetLayersForFunction(ctx context.Context, functi
 	}
 
 	for rows.Next() {
-		var layer types.LambdaLayer
+		var layer domain.LambdaLayer
 		err := rows.Scan(&layer.Name, &layer.Version, &layer.CodeSize)
 		if err != nil {
 			e := RowError{
@@ -156,10 +145,10 @@ func (f FunctionRepositoryImpl) GetLayersForFunction(ctx context.Context, functi
 	return layers, nil
 }
 
-func (f FunctionRepositoryImpl) GetLatestFunctionByName(ctx context.Context, name string) (*types.Function, error) {
+func (f FunctionRepository) GetLatestFunctionByName(ctx context.Context, name string) (*domain.Function, error) {
 	logger.Infof("Querying for Latest Function %s.", name)
 
-	var function types.Function
+	var function domain.Function
 	err := f.db.QueryRowContext(
 		ctx,
 		`SELECT id, name, version, description, handler, role, dead_letter_arn, memory_size,
@@ -210,7 +199,7 @@ func (f FunctionRepositoryImpl) GetLatestFunctionByName(ctx context.Context, nam
 	return &function, nil
 }
 
-func (f FunctionRepositoryImpl) GetLatestVersionForFunctionName(ctx context.Context, name string) (int, error) {
+func (f FunctionRepository) GetLatestVersionForFunctionName(ctx context.Context, name string) (int, error) {
 	logger.Infof("Querying for Lambda Function %s", name)
 
 	var dbName string
@@ -239,10 +228,10 @@ func (f FunctionRepositoryImpl) GetLatestVersionForFunctionName(ctx context.Cont
 	return dbVersion, nil
 }
 
-func (f FunctionRepositoryImpl) GetVersionsForFunctionName(ctx context.Context, name string) ([]types.Function, error) {
+func (f FunctionRepository) GetVersionsForFunctionName(ctx context.Context, name string) ([]domain.Function, error) {
 	logger.Infof("Querying for all Versions of Function %s.", name)
 
-	var results []types.Function
+	var results []domain.Function
 	rows, err := f.db.QueryContext(
 		ctx,
 		`SELECT id, name, version, description, handler, role, dead_letter_arn, memory_size,
@@ -258,7 +247,7 @@ func (f FunctionRepositoryImpl) GetVersionsForFunctionName(ctx context.Context, 
 	}
 
 	for rows.Next() {
-		var function types.Function
+		var function domain.Function
 		err := rows.Scan(
 			&function.ID,
 			&function.FunctionName,
@@ -306,7 +295,7 @@ func (f FunctionRepositoryImpl) GetVersionsForFunctionName(ctx context.Context, 
 	return results, nil
 }
 
-func (f FunctionRepositoryImpl) InsertFunction(ctx context.Context, function *types.Function) (*types.Function, error) {
+func (f FunctionRepository) InsertFunction(ctx context.Context, function *domain.Function) (*domain.Function, error) {
 
 	tx, err := f.db.BeginTx(ctx)
 	if err != nil {
@@ -403,7 +392,7 @@ func (f FunctionRepositoryImpl) InsertFunction(ctx context.Context, function *ty
 		return nil, e
 	}
 
-	saved := types.Function{
+	saved := domain.Function{
 		ID:                         functionId,
 		FunctionName:               function.FunctionName,
 		Description:                function.Description,
@@ -433,7 +422,7 @@ func (f FunctionRepositoryImpl) InsertFunction(ctx context.Context, function *ty
 	return &saved, nil
 }
 
-func (f FunctionRepositoryImpl) UpsertFunctionEnvironment(ctx context.Context, function *types.Function, environment *aws.Environment) error {
+func (f FunctionRepository) UpsertFunctionEnvironment(ctx context.Context, function *domain.Function, environment *aws.Environment) error {
 	logger.Infof("Upserting Environment for Function %s", function.FunctionName)
 
 	adds := make(map[string]string)

@@ -6,8 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/ATenderholt/lambda-router/internal/repo"
-	"github.com/ATenderholt/lambda-router/internal/repo/types"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
@@ -20,8 +19,8 @@ import (
 
 type LayerHandler struct {
 	cfg         *settings.Config
-	layerRepo   repo.LayerRepository
-	runtimeRepo repo.RuntimeRepository
+	layerRepo   domain.LayerRepository
+	runtimeRepo domain.RuntimeRepository
 }
 
 func (h LayerHandler) GetAllLayerVersions(response http.ResponseWriter, request *http.Request) {
@@ -53,7 +52,7 @@ func (h LayerHandler) GetLayerVersion(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	logger.Infof("Getting version %d of layer %s", layerVersionStr, layerName)
+	logger.Infof("Getting version %d of layer %s", layerVersion, layerName)
 	ctx := request.Context()
 
 	layer, err := h.layerRepo.GetLayerByNameAndVersion(ctx, layerName, layerVersion)
@@ -130,7 +129,7 @@ func (h LayerHandler) PostLayerVersions(writer http.ResponseWriter, request *htt
 	rawHash := sha256.Sum256(body.Content.ZipFile)
 	hash := base64.StdEncoding.EncodeToString(rawHash[:])
 
-	layer := types.LambdaLayer{
+	layer := domain.LambdaLayer{
 		Name:               layerName,
 		Version:            version + 1,
 		Description:        *body.Description,

@@ -3,7 +3,7 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ATenderholt/lambda-router/internal/repo/types"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/settings"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"net/http"
@@ -22,7 +22,7 @@ func createDirs(dirPath string) error {
 	return nil
 }
 
-func layersToAwsLayers(layers []types.LambdaLayer, cfg *settings.Config) []aws.LayerVersionsListItem {
+func layersToAwsLayers(layers []domain.LambdaLayer, cfg *settings.Config) []aws.LayerVersionsListItem {
 	results := make([]aws.LayerVersionsListItem, len(layers))
 	for i, layer := range layers {
 		results[i] = layer.ToLayerVersionsListItem(cfg)

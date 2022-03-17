@@ -6,8 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/ATenderholt/lambda-router/internal/repo"
-	"github.com/ATenderholt/lambda-router/internal/repo/types"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/pkg/zip"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
@@ -20,9 +19,9 @@ import (
 
 type FunctionHandler struct {
 	cfg          *settings.Config
-	functionRepo repo.FunctionRepository
-	layerRepo    repo.LayerRepository
-	runtimeRepo  repo.RuntimeRepository
+	functionRepo domain.FunctionRepository
+	layerRepo    domain.LayerRepository
+	runtimeRepo  domain.RuntimeRepository
 }
 
 func (f FunctionHandler) PostLambdaFunction(writer http.ResponseWriter, request *http.Request) {
@@ -67,7 +66,7 @@ func (f FunctionHandler) PostLambdaFunction(writer http.ResponseWriter, request 
 		return
 	}
 
-	function := types.CreateFunction(&body)
+	function := domain.CreateFunction(&body)
 	function.Version = strconv.Itoa(dbVersion + 1)
 	rawHash := sha256.Sum256(code.ZipFile)
 	function.CodeSha256 = base64.StdEncoding.EncodeToString(rawHash[:])

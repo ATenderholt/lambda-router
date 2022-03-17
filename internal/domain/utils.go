@@ -1,4 +1,4 @@
-package types
+package domain
 
 import (
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"

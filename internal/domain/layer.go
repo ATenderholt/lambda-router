@@ -1,6 +1,7 @@
-package types
+package domain
 
 import (
+	"context"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
@@ -18,6 +19,13 @@ type LambdaLayer struct {
 	CompatibleRuntimes []types.Runtime
 	CodeSize           int64
 	CodeSha256         string
+}
+
+type LayerRepository interface {
+	InsertLayer(ctx context.Context, layer LambdaLayer, dbRuntimes *map[types.Runtime]int) (*LambdaLayer, error)
+	GetLayerByName(ctx context.Context, name string) ([]LambdaLayer, error)
+	GetLayerByNameAndVersion(ctx context.Context, name string, version int) (LambdaLayer, error)
+	GetLatestLayerVersionByName(ctx context.Context, name string) (int, error)
 }
 
 func (layer LambdaLayer) GetDestPath(cfg *settings.Config) string {

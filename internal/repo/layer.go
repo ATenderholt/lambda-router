@@ -4,21 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/ATenderholt/lambda-router/internal/repo/types"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/pkg/database"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"strings"
 	"time"
 )
 
-type LayerRepository interface {
-	InsertLayer(ctx context.Context, layer types.LambdaLayer, dbRuntimes *map[aws.Runtime]int) (*types.LambdaLayer, error)
-	GetLayerByName(ctx context.Context, name string) ([]types.LambdaLayer, error)
-	GetLayerByNameAndVersion(ctx context.Context, name string, version int) (types.LambdaLayer, error)
-	GetLatestLayerVersionByName(ctx context.Context, name string) (int, error)
-}
-
-func NewLayerRepository(db database.Database) LayerRepository {
+func NewLayerRepository(db database.Database) domain.LayerRepository {
 	return LayerRepositoryImpl{db}
 }
 
@@ -26,7 +19,7 @@ type LayerRepositoryImpl struct {
 	db database.Database
 }
 
-func (l LayerRepositoryImpl) InsertLayer(ctx context.Context, layer types.LambdaLayer, dbRuntimes *map[aws.Runtime]int) (*types.LambdaLayer, error) {
+func (l LayerRepositoryImpl) InsertLayer(ctx context.Context, layer domain.LambdaLayer, dbRuntimes *map[aws.Runtime]int) (*domain.LambdaLayer, error) {
 
 	tx, err := l.db.BeginTx(ctx)
 	if err != nil {
@@ -89,12 +82,12 @@ func (l LayerRepositoryImpl) InsertLayer(ctx context.Context, layer types.Lambda
 		return nil, e
 	}
 
-	result := types.LambdaLayer{
+	result := domain.LambdaLayer{
 		ID:                 layerId,
 		Name:               layer.Name,
 		Version:            layer.Version,
 		Description:        layer.Description,
-		CreatedOn:          createdOn.Format(types.TimeFormat),
+		CreatedOn:          createdOn.Format(domain.TimeFormat),
 		CompatibleRuntimes: layer.CompatibleRuntimes,
 		CodeSize:           layer.CodeSize,
 		CodeSha256:         layer.CodeSha256,
@@ -103,10 +96,10 @@ func (l LayerRepositoryImpl) InsertLayer(ctx context.Context, layer types.Lambda
 	return &result, nil
 }
 
-func (l LayerRepositoryImpl) GetLayerByName(ctx context.Context, name string) ([]types.LambdaLayer, error) {
+func (l LayerRepositoryImpl) GetLayerByName(ctx context.Context, name string) ([]domain.LambdaLayer, error) {
 	logger.Infof("Querying for Layer %s by Name", name)
 
-	var results []types.LambdaLayer
+	var results []domain.LambdaLayer
 	rows, err := l.db.QueryContext(
 		ctx,
 		`SELECT ll.id, ll.name, ll.description, ll.version, ll.created_on, GROUP_CONCAT(r.name) AS runtimes,
@@ -131,7 +124,7 @@ func (l LayerRepositoryImpl) GetLayerByName(ctx context.Context, name string) ([
 	}
 
 	for rows.Next() {
-		var result types.LambdaLayer
+		var result domain.LambdaLayer
 		var createdOn int64
 		var runtimes string
 		err := rows.Scan(&result.ID, &result.Name, &result.Description, &result.Version, &createdOn, &runtimes,
@@ -158,8 +151,8 @@ func (l LayerRepositoryImpl) GetLayerByName(ctx context.Context, name string) ([
 	return results, nil
 }
 
-func (l LayerRepositoryImpl) GetLayerByNameAndVersion(ctx context.Context, name string, version int) (types.LambdaLayer, error) {
-	var result types.LambdaLayer
+func (l LayerRepositoryImpl) GetLayerByNameAndVersion(ctx context.Context, name string, version int) (domain.LambdaLayer, error) {
+	var result domain.LambdaLayer
 	var createdOn int64
 	var runtimes string
 

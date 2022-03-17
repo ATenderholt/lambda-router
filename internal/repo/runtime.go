@@ -3,24 +3,20 @@ package repo
 import (
 	"context"
 	"database/sql"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/pkg/database"
-	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
+	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 )
-
-type RuntimeRepository interface {
-	RuntimeExistsByName(ctx context.Context, runtime aws.Runtime) (bool, error)
-	RuntimeIDsByNames(ctx context.Context, runtimes []aws.Runtime) (map[aws.Runtime]int, error)
-}
 
 type RuntimeRepositoryImpl struct {
 	db database.Database
 }
 
-func NewRuntimeRepository(db database.Database) RuntimeRepository {
+func NewRuntimeRepository(db database.Database) domain.RuntimeRepository {
 	return RuntimeRepositoryImpl{db}
 }
 
-func (r RuntimeRepositoryImpl) RuntimeExistsByName(ctx context.Context, runtime aws.Runtime) (bool, error) {
+func (r RuntimeRepositoryImpl) RuntimeExistsByName(ctx context.Context, runtime types.Runtime) (bool, error) {
 	logger.Infof("Querying for Lambda Runtime %s.", runtime)
 	var id int
 	var name string
@@ -44,8 +40,8 @@ func (r RuntimeRepositoryImpl) RuntimeExistsByName(ctx context.Context, runtime 
 	return true, nil
 }
 
-func (r RuntimeRepositoryImpl) RuntimeIDsByNames(ctx context.Context, runtimes []aws.Runtime) (map[aws.Runtime]int, error) {
-	results := make(map[aws.Runtime]int, len(runtimes))
+func (r RuntimeRepositoryImpl) RuntimeIDsByNames(ctx context.Context, runtimes []types.Runtime) (map[types.Runtime]int, error) {
+	results := make(map[types.Runtime]int, len(runtimes))
 	var resultError error = nil
 	for _, runtime := range runtimes {
 		var id int
