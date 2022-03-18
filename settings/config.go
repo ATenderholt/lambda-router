@@ -18,6 +18,7 @@ const (
 type Config struct {
 	AccountNumber string
 	IsDebug       bool
+	IsLocal       bool
 	Region        string
 
 	Database *Database
@@ -72,6 +73,7 @@ func DefaultConfig() *Config {
 	return &Config{
 		AccountNumber: DefaultAccountNumber,
 		IsDebug:       false,
+		IsLocal:       true,
 		Region:        DefaultRegion,
 		Database:      DefaultDatabase(),
 		BasePort:      DefaultBasePort,
