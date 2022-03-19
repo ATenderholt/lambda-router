@@ -156,7 +156,7 @@ func (l LayerRepositoryImpl) GetLayerByNameAndVersion(ctx context.Context, name 
 	var createdOn int64
 	var runtimes string
 
-	logger.Info("Querying for Layer by Name and Version: %s / %d", name, version)
+	logger.Infof("Querying for Layer by Name and Version: %s / %d", name, version)
 
 	err := l.db.QueryRowContext(
 		ctx,

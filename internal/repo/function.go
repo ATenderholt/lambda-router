@@ -18,7 +18,7 @@ func NewFunctionRepository(db database.Database) domain.FunctionRepository {
 }
 
 func (f FunctionRepository) GetAllLatestFunctions(ctx context.Context) ([]domain.Function, error) {
-	logger.Info("Querying for latest version of all Functions.")
+	logger.Infof("Querying for latest version of all Functions.")
 
 	rows, err := f.db.QueryContext(
 		ctx,
@@ -60,7 +60,7 @@ func (f FunctionRepository) GetAllLatestFunctions(ctx context.Context) ([]domain
 		results = append(results, function)
 	}
 
-	logger.Info("Found %d Functions.", len(results))
+	logger.Infof("Found %d Functions.", len(results))
 	return results, nil
 }
 
@@ -75,7 +75,7 @@ func (f FunctionRepository) GetEnvironmentForFunction(ctx context.Context, funct
 	)
 	switch {
 	case err == sql.ErrNoRows:
-		logger.Info("No Environment was found for Function %s", function.FunctionName)
+		logger.Infof("No Environment was found for Function %s", function.FunctionName)
 	case err != nil:
 		e := Error{"unable to get Environment for Function " + function.FunctionName, err}
 		logger.Error(e)
@@ -215,7 +215,7 @@ func (f FunctionRepository) GetLatestVersionForFunctionName(ctx context.Context,
 
 	switch {
 	case err == sql.ErrNoRows:
-		logger.Info("Lambda Function %s not found, returning version = 0.", name)
+		logger.Infof("Lambda Function %s not found, returning version = 0.", name)
 		return 0, nil
 	case err != nil:
 		e := fmt.Errorf("error when querying function version for %s: %v", name, err)

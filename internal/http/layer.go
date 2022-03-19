@@ -69,7 +69,7 @@ func (h LayerHandler) GetLayerVersion(writer http.ResponseWriter, request *http.
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 	}
 
-	logger.Info("Found %+v", layer)
+	logger.Infof("Found %+v", layer)
 
 	result := lambda.GetLayerVersionOutput{
 		CompatibleArchitectures: []aws.Architecture{},
@@ -131,8 +131,8 @@ func (h LayerHandler) PostLayerVersions(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	logger.Info("Found latest verion for layer %s: %v", layerName, version)
-	logger.Info("Saving %d bytes from zipfile", len(body.Content.ZipFile))
+	logger.Infof("Found latest verion for layer %s: %v", layerName, version)
+	logger.Infof("Saving %d bytes from zipfile", len(body.Content.ZipFile))
 
 	rawHash := sha256.Sum256(body.Content.ZipFile)
 	hash := base64.StdEncoding.EncodeToString(rawHash[:])
@@ -147,7 +147,7 @@ func (h LayerHandler) PostLayerVersions(writer http.ResponseWriter, request *htt
 	}
 
 	destPath := layer.GetDestPath(h.cfg)
-	logger.Info("Saving layer %s to %s...", layerName, destPath)
+	logger.Infof("Saving layer %s to %s...", layerName, destPath)
 	err = createDirs(filepath.Dir(destPath))
 	if err != nil {
 		msg := fmt.Sprintf("unable to create parent directory for layer %s: %v", destPath, err)

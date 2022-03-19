@@ -120,7 +120,7 @@ func (f FunctionHandler) PostLambdaFunction(writer http.ResponseWriter, request 
 func (f FunctionHandler) PutLambdaConfiguration(response http.ResponseWriter, request *http.Request) {
 	name := chi.URLParam(request, "name")
 
-	logger.Info("Setting configuration for Lambda Function %s ...", name)
+	logger.Infof("Setting configuration for Lambda Function %s ...", name)
 
 	decoder := json.NewDecoder(request.Body)
 	defer request.Body.Close()
@@ -134,7 +134,7 @@ func (f FunctionHandler) PutLambdaConfiguration(response http.ResponseWriter, re
 		return
 	}
 
-	logger.Info("Configuration: %+v", body)
+	logger.Infof("Configuration: %+v", body)
 
 	ctx := request.Context()
 
@@ -142,7 +142,7 @@ func (f FunctionHandler) PutLambdaConfiguration(response http.ResponseWriter, re
 
 	switch {
 	case err == sql.ErrNoRows:
-		logger.Info("Unable to find Function named %s", name)
+		logger.Infof("Unable to find Function named %s", name)
 		http.NotFound(response, request)
 		return
 	case err != nil:
@@ -198,7 +198,7 @@ func (f FunctionHandler) GetLambdaFunction(response http.ResponseWriter, request
 func (f FunctionHandler) GetFunctionVersions(response http.ResponseWriter, request *http.Request) {
 	name := chi.URLParam(request, "name")
 
-	logger.Info("Getting Versions for Lambda Function %s", name)
+	logger.Infof("Getting Versions for Lambda Function %s", name)
 
 	ctx := request.Context()
 
