@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"embed"
-	"github.com/ATenderholt/lambda-router/internal/http"
+	"github.com/ATenderholt/lambda-router/internal/docker"
 	"github.com/ATenderholt/lambda-router/logging"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/pressly/goose/v3"
 	"go.uber.org/zap"
+	"net/http"
 	"os"
 	"os/signal"
 	"time"
@@ -22,6 +23,37 @@ var embedMigrations embed.FS
 
 func init() {
 	logger = logging.NewLogger()
+}
+
+type App struct {
+	port   int
+	srv    *http.Server
+	docker *docker.Manager
+}
+
+func (app App) Start() (err error) {
+	go func() {
+		e := app.srv.ListenAndServe()
+		if e != nil && e != http.ErrServerClosed {
+			logger.Errorf("Problem starting HTTP server: %v", e)
+			err = e
+		}
+	}()
+
+	logger.Infof("Finished starting HTTP server on port %d", app.port)
+	return
+}
+
+func (app App) Shutdown() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	err := app.srv.Shutdown(ctx)
+	if err != nil {
+		logger.Error("Unable to shutdown HTTP server: %v", err)
+	}
+
+	return err
 }
 
 func main() {
@@ -48,25 +80,28 @@ func start(ctx context.Context, config *settings.Config) error {
 
 	initializeDb(config)
 
-	//initializeDocker(ctx)
-	server, err := http.Serve(config)
+	app, err := InjectApp(config)
 	if err != nil {
-		panic(err)
+		logger.Errorf("Unable to initialize application: %v", err)
+		return err
 	}
+
+	err = app.Start()
+	if err != nil {
+		logger.Errorf("Unable to start application: %v", err)
+		return err
+	}
+
+	//initializeDocker(ctx)
 
 	<-ctx.Done()
 
 	logger.Info("Shutting down ...")
-
-	ctxShutDown, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer func() {
-		cancel()
-	}()
-
-	err = server.Shutdown(ctxShutDown)
+	err = app.Shutdown()
 	if err != nil {
-		logger.Error("Error when shutting down HTTP server")
+		logger.Error("Error when shutting down app")
 	}
+	
 	//
 	//err = docker.ShutdownAll(ctxShutDown)
 	//if err != nil {

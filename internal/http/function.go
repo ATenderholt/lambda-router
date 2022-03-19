@@ -24,6 +24,16 @@ type FunctionHandler struct {
 	runtimeRepo  domain.RuntimeRepository
 }
 
+func NewFunctionHandler(cfg *settings.Config, functionRepo domain.FunctionRepository, layerRepo domain.LayerRepository,
+	runtimeRepo domain.RuntimeRepository) FunctionHandler {
+	return FunctionHandler{
+		cfg:          cfg,
+		functionRepo: functionRepo,
+		layerRepo:    layerRepo,
+		runtimeRepo:  runtimeRepo,
+	}
+}
+
 func (f FunctionHandler) PostLambdaFunction(writer http.ResponseWriter, request *http.Request) {
 	dec := json.NewDecoder(request.Body)
 
@@ -219,10 +229,3 @@ func (f FunctionHandler) GetFunctionCodeSigning(response http.ResponseWriter, re
 	result := lambda.GetFunctionCodeSigningConfigOutput{}
 	respondWithJson(response, result)
 }
-
-//const InvokeFunctionRegex = `/2015-03-31/functions/[0-9A-Za-z_-]+/invocations`
-//
-//func (f FunctionHandler) InvokeFunction(response http.ResponseWriter, request *http.Request) {
-//	name := getFunctionName(request.URL.Path)
-//	manager.Invoke(name, &response, request)
-//}

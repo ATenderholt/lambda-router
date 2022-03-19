@@ -23,6 +23,14 @@ type LayerHandler struct {
 	runtimeRepo domain.RuntimeRepository
 }
 
+func NewLayerHandler(cfg *settings.Config, layerRepo domain.LayerRepository, runtimeRepo domain.RuntimeRepository) LayerHandler {
+	return LayerHandler{
+		cfg:         cfg,
+		layerRepo:   layerRepo,
+		runtimeRepo: runtimeRepo,
+	}
+}
+
 func (h LayerHandler) GetAllLayerVersions(response http.ResponseWriter, request *http.Request) {
 	layerName := chi.URLParam(request, "layerName")
 
