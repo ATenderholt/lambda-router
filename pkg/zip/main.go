@@ -90,7 +90,7 @@ func decompressZipFile(reader *zip.Reader, destPath string) error {
 			return errors.New(msg)
 		}
 
-		logger.Info("Saving %s ...", filePath)
+		logger.Debugf("Saving %s ...", filePath)
 		err = saveFile(filePath, *f)
 		if err != nil {
 			msg := fmt.Sprintf("unable to save file %s in %s: %v", f.Name, destPath, err)
