@@ -37,22 +37,23 @@ func InjectApp(cfg *settings.Config) (App, error) {
 		return App{}, err
 	}
 	mux := http.NewChiMux(layerHandler, functionHandler, manager)
-	app := NewApp(cfg, mux, manager)
+	app := NewApp(cfg, mux, manager, functionRepository)
 	return app, nil
 }
 
 // inject.go:
 
-func NewApp(cfg *settings.Config, mux *chi.Mux, docker2 *docker.Manager) App {
+func NewApp(cfg *settings.Config, mux *chi.Mux, docker2 *docker.Manager, functionRepo domain.FunctionRepository) App {
 	srv := &http2.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
 	}
 
 	return App{
-		port:   cfg.BasePort,
-		srv:    srv,
-		docker: docker2,
+		port:         cfg.BasePort,
+		srv:          srv,
+		docker:       docker2,
+		functionRepo: functionRepo,
 	}
 }
 

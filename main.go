@@ -27,13 +27,29 @@ func init() {
 }
 
 type App struct {
-	port        int
-	srv         *http.Server
-	runtimeRepo domain.RuntimeRepository
-	docker      *docker.Manager
+	port         int
+	srv          *http.Server
+	functionRepo domain.FunctionRepository
+	docker       *docker.Manager
 }
 
 func (app App) Start() (err error) {
+	ctx := context.Background()
+
+	functions, err := app.functionRepo.GetAllLatestFunctions(ctx)
+	if err != nil {
+		logger.Error("Unable to query for Runtimes")
+		return
+	}
+
+	for _, function := range functions {
+		err = app.docker.StartFunction(ctx, &function)
+		if err != nil {
+			logger.Error("Unable to start function %s", function)
+			return
+		}
+	}
+
 	go func() {
 		e := app.srv.ListenAndServe()
 		if e != nil && e != http.ErrServerClosed {
@@ -50,7 +66,12 @@ func (app App) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
-	err := app.srv.Shutdown(ctx)
+	err := app.docker.ShutdownAll(ctx)
+	if err != nil {
+		logger.Error("Unable to shutdown Docker containers: %v", err)
+	}
+
+	err = app.srv.Shutdown(ctx)
 	if err != nil {
 		logger.Error("Unable to shutdown HTTP server: %v", err)
 	}

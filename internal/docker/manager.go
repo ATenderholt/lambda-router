@@ -7,11 +7,20 @@ import (
 	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/settings"
+	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
 )
+
+var imageMap = map[aws.Runtime]string{
+	aws.RuntimePython36:       "lambci/lambda:python3.6",
+	aws.RuntimePython37:       "lambci/lambda:python3.7",
+	aws.RuntimePython38:       "mlupin/docker-lambda:python3.8",
+	aws.RuntimePython39:       "mlupin/docker-lambda:python3.9",
+	aws.Runtime("python3.10"): "mlupin/docker-lambda:python3.10",
+}
 
 // Manager is responsible for launching Docker containers hosting Lambda functions & their invocation
 type Manager struct {
@@ -50,11 +59,19 @@ func (m Manager) StartFunction(ctx context.Context, function *domain.Function) e
 		return errors.New(msg)
 	}
 
+	logger.Infof("Ensuring image exists for Function %s", function.FunctionName)
+	err = m.EnsureRuntime(ctx, function.Runtime)
+	if err != nil {
+		msg := fmt.Sprintf("Unable to Ensure that Image exists for Function %s: %v", function.FunctionName, err)
+		logger.Error(msg)
+		return err
+	}
+
 	logger.Infof("Starting Function %s on port %d using handler %s", function.FunctionName, port, function.Handler)
 
 	container := dockerlib.Container{
 		Name:    function.FunctionName,
-		Image:   "mlupin/docker-lambda:" + string(function.Runtime),
+		Image:   imageMap[function.Runtime],
 		Command: []string{function.Handler},
 		Mounts: []mount.Mount{
 			{
@@ -136,4 +153,14 @@ func (m Manager) Invoke(writer http.ResponseWriter, request *http.Request) {
 
 	io.Copy(writer, resp.Body)
 	resp.Body.Close()
+}
+
+func (m *Manager) EnsureRuntime(ctx context.Context, name aws.Runtime) error {
+	err := m.docker.EnsureImage(ctx, imageMap[name])
+	logger.Errorf("unable to get image %s: %v", name, err)
+	return err
+}
+
+func (m *Manager) ShutdownAll(ctx context.Context) error {
+	return m.docker.ShutdownAll(ctx)
 }

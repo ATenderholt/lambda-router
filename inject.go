@@ -16,16 +16,17 @@ import (
 	"net/http"
 )
 
-func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager) App {
+func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, functionRepo domain.FunctionRepository) App {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
 	}
 
 	return App{
-		port:   cfg.BasePort,
-		srv:    srv,
-		docker: docker,
+		port:         cfg.BasePort,
+		srv:          srv,
+		docker:       docker,
+		functionRepo: functionRepo,
 	}
 }
 
