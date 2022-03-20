@@ -31,11 +31,11 @@ func InjectApp(cfg *settings.Config) (App, error) {
 	runtimeRepository := repo.NewRuntimeRepository(database)
 	layerHandler := http.NewLayerHandler(cfg, layerRepository, runtimeRepository)
 	functionRepository := repo.NewFunctionRepository(database)
-	functionHandler := http.NewFunctionHandler(cfg, functionRepository, layerRepository, runtimeRepository)
 	manager, err := docker.NewManager(cfg)
 	if err != nil {
 		return App{}, err
 	}
+	functionHandler := http.NewFunctionHandler(cfg, functionRepository, layerRepository, runtimeRepository, manager)
 	mux := http.NewChiMux(layerHandler, functionHandler, manager)
 	app := NewApp(cfg, mux, manager, functionRepository)
 	return app, nil

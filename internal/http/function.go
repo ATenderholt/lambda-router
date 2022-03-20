@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/ATenderholt/lambda-router/internal/docker"
 	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/pkg/zip"
 	"github.com/ATenderholt/lambda-router/settings"
@@ -22,15 +23,17 @@ type FunctionHandler struct {
 	functionRepo domain.FunctionRepository
 	layerRepo    domain.LayerRepository
 	runtimeRepo  domain.RuntimeRepository
+	docker       *docker.Manager
 }
 
 func NewFunctionHandler(cfg *settings.Config, functionRepo domain.FunctionRepository, layerRepo domain.LayerRepository,
-	runtimeRepo domain.RuntimeRepository) FunctionHandler {
+	runtimeRepo domain.RuntimeRepository, docker *docker.Manager) FunctionHandler {
 	return FunctionHandler{
 		cfg:          cfg,
 		functionRepo: functionRepo,
 		layerRepo:    layerRepo,
 		runtimeRepo:  runtimeRepo,
+		docker:       docker,
 	}
 }
 
@@ -112,6 +115,14 @@ func (f FunctionHandler) PostLambdaFunction(writer http.ResponseWriter, request 
 	}
 
 	saved, err := f.functionRepo.InsertFunction(ctx, function)
+	err = f.docker.StartFunction(ctx, function)
+	if err != nil {
+		msg := fmt.Sprintf("unable to start Function %s: %v", function.FunctionName, err)
+		logger.Error(msg)
+		http.Error(writer, msg, http.StatusInternalServerError)
+		return
+	}
+
 	result := saved.ToCreateFunctionOutput(f.cfg)
 
 	respondWithJson(writer, result)
