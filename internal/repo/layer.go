@@ -11,15 +11,15 @@ import (
 	"time"
 )
 
-func NewLayerRepository(db database.Database) domain.LayerRepository {
-	return LayerRepositoryImpl{db}
+func NewLayerRepository(db database.Database) *LayerRepository {
+	return &LayerRepository{db}
 }
 
-type LayerRepositoryImpl struct {
+type LayerRepository struct {
 	db database.Database
 }
 
-func (l LayerRepositoryImpl) InsertLayer(ctx context.Context, layer domain.LambdaLayer, dbRuntimes *map[aws.Runtime]int) (*domain.LambdaLayer, error) {
+func (l *LayerRepository) InsertLayer(ctx context.Context, layer domain.LambdaLayer, dbRuntimes *map[aws.Runtime]int) (*domain.LambdaLayer, error) {
 
 	tx, err := l.db.BeginTx(ctx)
 	if err != nil {
@@ -96,7 +96,7 @@ func (l LayerRepositoryImpl) InsertLayer(ctx context.Context, layer domain.Lambd
 	return &result, nil
 }
 
-func (l LayerRepositoryImpl) GetLayerByName(ctx context.Context, name string) ([]domain.LambdaLayer, error) {
+func (l LayerRepository) GetLayerByName(ctx context.Context, name string) ([]domain.LambdaLayer, error) {
 	logger.Infof("Querying for Layer %s by Name", name)
 
 	var results []domain.LambdaLayer
@@ -151,7 +151,7 @@ func (l LayerRepositoryImpl) GetLayerByName(ctx context.Context, name string) ([
 	return results, nil
 }
 
-func (l LayerRepositoryImpl) GetLayerByNameAndVersion(ctx context.Context, name string, version int) (domain.LambdaLayer, error) {
+func (l LayerRepository) GetLayerByNameAndVersion(ctx context.Context, name string, version int) (domain.LambdaLayer, error) {
 	var result domain.LambdaLayer
 	var createdOn int64
 	var runtimes string
@@ -205,7 +205,7 @@ func stringToRuntimes(runtime string) []aws.Runtime {
 	return runtimes
 }
 
-func (l LayerRepositoryImpl) GetLatestLayerVersionByName(ctx context.Context, name string) (int, error) {
+func (l LayerRepository) GetLatestLayerVersionByName(ctx context.Context, name string) (int, error) {
 	logger.Infof("Getting latest version number for Layer %s", name)
 
 	var dbName sql.NullString

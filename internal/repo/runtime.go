@@ -8,15 +8,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 )
 
-type RuntimeRepositoryImpl struct {
+type RuntimeRepository struct {
 	db database.Database
 }
 
 func NewRuntimeRepository(db database.Database) domain.RuntimeRepository {
-	return RuntimeRepositoryImpl{db}
+	return RuntimeRepository{db}
 }
 
-func (r RuntimeRepositoryImpl) RuntimeExistsByName(ctx context.Context, runtime types.Runtime) (bool, error) {
+func (r RuntimeRepository) RuntimeExistsByName(ctx context.Context, runtime types.Runtime) (bool, error) {
 	logger.Infof("Querying for Lambda Runtime %s.", runtime)
 	var id int
 	var name string
@@ -40,7 +40,7 @@ func (r RuntimeRepositoryImpl) RuntimeExistsByName(ctx context.Context, runtime 
 	return true, nil
 }
 
-func (r RuntimeRepositoryImpl) RuntimeIDsByNames(ctx context.Context, runtimes []types.Runtime) (map[types.Runtime]int, error) {
+func (r RuntimeRepository) RuntimeIDsByNames(ctx context.Context, runtimes []types.Runtime) (map[types.Runtime]int, error) {
 	results := make(map[types.Runtime]int, len(runtimes))
 	var resultError error = nil
 	for _, runtime := range runtimes {
