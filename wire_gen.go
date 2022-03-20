@@ -36,7 +36,9 @@ func InjectApp(cfg *settings.Config) (App, error) {
 		return App{}, err
 	}
 	functionHandler := http.NewFunctionHandler(cfg, functionRepository, layerRepository, runtimeRepository, manager)
-	mux := http.NewChiMux(layerHandler, functionHandler, manager)
+	eventSourceRepository := repo.NewEventSourceRepository(database)
+	eventSourceHandler := http.NewEventSourceHandler(cfg, eventSourceRepository, functionRepository)
+	mux := http.NewChiMux(layerHandler, functionHandler, eventSourceHandler, manager)
 	app := NewApp(cfg, mux, manager, functionRepository)
 	return app, nil
 }
@@ -64,7 +66,7 @@ func RealDatabase(cfg *settings.Config) database.Database {
 }
 
 var db = wire.NewSet(
-	RealDatabase, repo.NewFunctionRepository, repo.NewLayerRepository, repo.NewRuntimeRepository, wire.Bind(new(domain.FunctionRepository), new(*repo.FunctionRepository)), wire.Bind(new(domain.LayerRepository), new(*repo.LayerRepository)), wire.Bind(new(domain.RuntimeRepository), new(*repo.RuntimeRepository)),
+	RealDatabase, repo.NewFunctionRepository, repo.NewLayerRepository, repo.NewRuntimeRepository, repo.NewEventSourceRepository, wire.Bind(new(domain.FunctionRepository), new(*repo.FunctionRepository)), wire.Bind(new(domain.LayerRepository), new(*repo.LayerRepository)), wire.Bind(new(domain.RuntimeRepository), new(*repo.RuntimeRepository)), wire.Bind(new(domain.EventSourceRepository), new(*repo.EventSourceRepository)),
 )
 
-var api = wire.NewSet(http.NewFunctionHandler, http.NewLayerHandler, http.NewChiMux)
+var api = wire.NewSet(http.NewFunctionHandler, http.NewLayerHandler, http.NewEventSourceHandler, http.NewChiMux)

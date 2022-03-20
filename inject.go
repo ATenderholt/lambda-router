@@ -41,15 +41,18 @@ var db = wire.NewSet(
 	repo.NewFunctionRepository,
 	repo.NewLayerRepository,
 	repo.NewRuntimeRepository,
+	repo.NewEventSourceRepository,
 	// have to tell wire how to map interface to concrete type
 	wire.Bind(new(domain.FunctionRepository), new(*repo.FunctionRepository)),
 	wire.Bind(new(domain.LayerRepository), new(*repo.LayerRepository)),
 	wire.Bind(new(domain.RuntimeRepository), new(*repo.RuntimeRepository)),
+	wire.Bind(new(domain.EventSourceRepository), new(*repo.EventSourceRepository)),
 )
 
 var api = wire.NewSet(
 	handler.NewFunctionHandler,
 	handler.NewLayerHandler,
+	handler.NewEventSourceHandler,
 	handler.NewChiMux,
 )
 

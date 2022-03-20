@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	"github.com/google/uuid"
@@ -15,6 +16,11 @@ type EventSource struct {
 	Function     *Function
 	BatchSize    int32
 	LastModified int64
+}
+
+type EventSourceRepository interface {
+	InsertEventSource(ctx context.Context, eventSource EventSource) error
+	GetEventSource(ctx context.Context, id string) (*EventSource, error)
 }
 
 func (eventSource EventSource) ToCreateEventSourceMappingOutput(cfg *settings.Config) lambda.CreateEventSourceMappingOutput {
