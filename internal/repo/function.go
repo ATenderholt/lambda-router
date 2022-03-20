@@ -13,8 +13,8 @@ type FunctionRepository struct {
 	db database.Database
 }
 
-func NewFunctionRepository(db database.Database) domain.FunctionRepository {
-	return FunctionRepository{db}
+func NewFunctionRepository(db database.Database) *FunctionRepository {
+	return &FunctionRepository{db}
 }
 
 func (f FunctionRepository) GetAllLatestFunctions(ctx context.Context) ([]domain.Function, error) {

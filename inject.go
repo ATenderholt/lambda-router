@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"github.com/ATenderholt/lambda-router/internal/docker"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	handler "github.com/ATenderholt/lambda-router/internal/http"
 	"github.com/ATenderholt/lambda-router/internal/repo"
 	"github.com/ATenderholt/lambda-router/pkg/database"
@@ -39,6 +40,10 @@ var db = wire.NewSet(
 	repo.NewFunctionRepository,
 	repo.NewLayerRepository,
 	repo.NewRuntimeRepository,
+	// have to tell wire how to map interface to concrete type
+	wire.Bind(new(domain.FunctionRepository), new(*repo.FunctionRepository)),
+	wire.Bind(new(domain.LayerRepository), new(*repo.LayerRepository)),
+	wire.Bind(new(domain.RuntimeRepository), new(*repo.RuntimeRepository)),
 )
 
 var api = wire.NewSet(

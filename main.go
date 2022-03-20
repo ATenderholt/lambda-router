@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"github.com/ATenderholt/lambda-router/internal/docker"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/logging"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/pressly/goose/v3"
@@ -26,9 +27,10 @@ func init() {
 }
 
 type App struct {
-	port   int
-	srv    *http.Server
-	docker *docker.Manager
+	port        int
+	srv         *http.Server
+	runtimeRepo domain.RuntimeRepository
+	docker      *docker.Manager
 }
 
 func (app App) Start() (err error) {
@@ -101,7 +103,7 @@ func start(ctx context.Context, config *settings.Config) error {
 	if err != nil {
 		logger.Error("Error when shutting down app")
 	}
-	
+
 	//
 	//err = docker.ShutdownAll(ctxShutDown)
 	//if err != nil {

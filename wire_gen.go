@@ -9,6 +9,7 @@ package main
 import (
 	"fmt"
 	"github.com/ATenderholt/lambda-router/internal/docker"
+	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/internal/http"
 	"github.com/ATenderholt/lambda-router/internal/repo"
 	"github.com/ATenderholt/lambda-router/pkg/database"
@@ -62,7 +63,7 @@ func RealDatabase(cfg *settings.Config) database.Database {
 }
 
 var db = wire.NewSet(
-	RealDatabase, repo.NewFunctionRepository, repo.NewLayerRepository, repo.NewRuntimeRepository,
+	RealDatabase, repo.NewFunctionRepository, repo.NewLayerRepository, repo.NewRuntimeRepository, wire.Bind(new(domain.FunctionRepository), new(*repo.FunctionRepository)), wire.Bind(new(domain.LayerRepository), new(*repo.LayerRepository)), wire.Bind(new(domain.RuntimeRepository), new(*repo.RuntimeRepository)),
 )
 
 var api = wire.NewSet(http.NewFunctionHandler, http.NewLayerHandler, http.NewChiMux)

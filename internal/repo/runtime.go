@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"database/sql"
-	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/pkg/database"
 	"github.com/aws/aws-sdk-go-v2/service/lambda/types"
 )
@@ -12,8 +11,8 @@ type RuntimeRepository struct {
 	db database.Database
 }
 
-func NewRuntimeRepository(db database.Database) domain.RuntimeRepository {
-	return RuntimeRepository{db}
+func NewRuntimeRepository(db database.Database) *RuntimeRepository {
+	return &RuntimeRepository{db}
 }
 
 func (r RuntimeRepository) RuntimeExistsByName(ctx context.Context, runtime types.Runtime) (bool, error) {
