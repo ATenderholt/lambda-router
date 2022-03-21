@@ -11,6 +11,7 @@ type Database interface {
 	Close()
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	InsertOne(ctx context.Context, query string, args ...interface{}) (int64, error)
+	PrepareContext(ctx context.Context, query string) (*sql.Stmt, error)
 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
 	QueryRow(query string, args ...interface{}) *sql.Row
 	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
@@ -83,6 +84,10 @@ func (db RealDatabase) InsertOne(ctx context.Context, query string, args ...inte
 
 func (db RealDatabase) Exec(query string, args ...interface{}) (sql.Result, error) {
 	return db.Wrapped.Exec(query, args...)
+}
+
+func (db RealDatabase) PrepareContext(ctx context.Context, query string) (*sql.Stmt, error) {
+	return db.Wrapped.PrepareContext(ctx, query)
 }
 
 func (db RealDatabase) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {

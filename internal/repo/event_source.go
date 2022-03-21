@@ -100,3 +100,77 @@ func (e *EventSourceRepository) GetEventSource(ctx context.Context, id string) (
 
 	return &eventSource, nil
 }
+
+func (e *EventSourceRepository) GetAllEventSources(ctx context.Context) ([]domain.EventSource, error) {
+	logger.Info("Getting all Event Sources")
+
+	var results []domain.EventSource
+	rows, err := e.db.QueryContext(
+		ctx,
+		`SELECT uuid, enabled, arn, function_id, batch_size, last_modified_on FROM lambda_event_source`,
+	)
+
+	switch {
+	case err == sql.ErrNoRows:
+		logger.Warn("Unable to find any event sources.")
+		return results, nil
+	case err != nil:
+		e := Error{"Unable to find Event Sources", err}
+		logger.Error(e)
+		return nil, e
+	}
+
+	stmt, err := e.db.PrepareContext(ctx, `SELECT name, version FROM lambda_function WHERE id=? ORDER BY version DESC LIMIT 1`)
+	if err != nil {
+		e := Error{"Unable to prepare statement for GetAllEventSources", err}
+		logger.Error(e)
+		return nil, e
+	}
+	defer stmt.Close()
+
+	for rows.Next() {
+		var eventSource domain.EventSource
+		var functionId int64
+		err = rows.Scan(
+			&eventSource.UUID,
+			&eventSource.Enabled,
+			&eventSource.Arn,
+			&functionId,
+			&eventSource.BatchSize,
+			&eventSource.LastModified,
+		)
+
+		if err != nil {
+			e := RowError{
+				Op:   "GetAllEventSources",
+				Row:  len(results),
+				Base: err,
+			}
+			logger.Error(e)
+			return nil, e
+		}
+
+		row := stmt.QueryRowContext(ctx, functionId)
+		var function domain.Function
+		err = row.Scan(
+			&function.FunctionName,
+			&function.Version,
+		)
+
+		if err != nil {
+			e := RowError{
+				Op:   "GetAllEventSources HydrateFunction",
+				Row:  len(results),
+				Base: err,
+			}
+			logger.Error(e)
+			return nil, e
+		}
+
+		eventSource.Function = &function
+
+		results = append(results, eventSource)
+	}
+
+	return results, nil
+}

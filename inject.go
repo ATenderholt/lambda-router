@@ -9,6 +9,7 @@ import (
 	"github.com/ATenderholt/lambda-router/internal/domain"
 	handler "github.com/ATenderholt/lambda-router/internal/http"
 	"github.com/ATenderholt/lambda-router/internal/repo"
+	"github.com/ATenderholt/lambda-router/internal/sqs"
 	"github.com/ATenderholt/lambda-router/pkg/database"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/go-chi/chi/v5"
@@ -16,7 +17,7 @@ import (
 	"net/http"
 )
 
-func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, functionRepo domain.FunctionRepository) App {
+func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, sqs *sqs.Manager, functionRepo domain.FunctionRepository) App {
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
@@ -26,6 +27,7 @@ func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, function
 		port:         cfg.BasePort,
 		srv:          srv,
 		docker:       docker,
+		sqs:          sqs,
 		functionRepo: functionRepo,
 	}
 }
@@ -62,6 +64,7 @@ func InjectApp(cfg *settings.Config) (App, error) {
 		db,
 		api,
 		docker.NewManager,
+		sqs.NewManager,
 	)
 	return App{}, nil
 }

@@ -20,6 +20,7 @@ type EventSource struct {
 
 type EventSourceRepository interface {
 	InsertEventSource(ctx context.Context, eventSource EventSource) error
+	GetAllEventSources(ctx context.Context) ([]EventSource, error)
 	GetEventSource(ctx context.Context, id string) (*EventSource, error)
 }
 

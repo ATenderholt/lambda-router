@@ -5,6 +5,7 @@ import (
 	"embed"
 	"github.com/ATenderholt/lambda-router/internal/docker"
 	"github.com/ATenderholt/lambda-router/internal/domain"
+	"github.com/ATenderholt/lambda-router/internal/sqs"
 	"github.com/ATenderholt/lambda-router/logging"
 	"github.com/ATenderholt/lambda-router/settings"
 	"github.com/pressly/goose/v3"
@@ -31,6 +32,7 @@ type App struct {
 	srv          *http.Server
 	functionRepo domain.FunctionRepository
 	docker       *docker.Manager
+	sqs          *sqs.Manager
 }
 
 func (app App) Start() (err error) {
@@ -48,6 +50,12 @@ func (app App) Start() (err error) {
 			logger.Error("Unable to start function %s", function)
 			return
 		}
+	}
+
+	err = app.sqs.StartAllEventSources(ctx)
+	if err != nil {
+		logger.Error("Unable to start Event sources: %v", err)
+		return
 	}
 
 	go func() {

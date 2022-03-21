@@ -13,6 +13,8 @@ const (
 
 	DefaultBasePort = 9050
 	DefaultDataPath = "data"
+
+	DefaultSqsEndpoint = "http://localhost:9324"
 )
 
 type Config struct {
@@ -25,6 +27,8 @@ type Config struct {
 
 	BasePort int
 	dataPath string
+
+	SqsEndpoint string
 }
 
 func (config *Config) ArnFragment() string {
@@ -78,5 +82,6 @@ func DefaultConfig() *Config {
 		Database:      DefaultDatabase(),
 		BasePort:      DefaultBasePort,
 		dataPath:      DefaultDataPath,
+		SqsEndpoint:   DefaultSqsEndpoint,
 	}
 }
