@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/lambda-router/internal/docker"
 	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/internal/sqs"
@@ -90,6 +91,8 @@ func (app App) Shutdown() error {
 func main() {
 	cfg := settings.DefaultConfig()
 	mainCtx := context.Background()
+
+	dockerlib.SetLogger(logging.NewLogger().Desugar().Named("dockerlib"))
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)

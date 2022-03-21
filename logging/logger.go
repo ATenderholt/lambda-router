@@ -1,9 +1,16 @@
 package logging
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
 func NewLogger() *zap.SugaredLogger {
-	t, err := zap.NewProduction()
+	cfg := zap.NewProductionConfig()
+	cfg.Encoding = "console"
+	cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	t, err := cfg.Build()
 	if err != nil {
 		panic(err)
 	}
