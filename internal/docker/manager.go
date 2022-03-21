@@ -157,7 +157,9 @@ func (m Manager) Invoke(writer http.ResponseWriter, request *http.Request) {
 
 func (m *Manager) EnsureRuntime(ctx context.Context, name aws.Runtime) error {
 	err := m.docker.EnsureImage(ctx, imageMap[name])
-	logger.Errorf("unable to get image %s: %v", name, err)
+	if err != nil {
+		logger.Errorf("unable to get image %s: %v", name, err)
+	}
 	return err
 }
 
