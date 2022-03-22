@@ -89,10 +89,7 @@ func (m Manager) StartFunction(ctx context.Context, function *domain.Function) e
 				Consistency: mount.ConsistencyDelegated,
 			},
 		},
-		Environment: []string{
-			"DOCKER_LAMBDA_STAY_OPEN=1",
-			"DOCKER_LAMBDA_WATCH=1",
-		},
+		Environment: buildEnvironment(function),
 		Ports: map[int]int{
 			9001: port,
 		},
@@ -115,6 +112,24 @@ func (m Manager) StartFunction(ctx context.Context, function *domain.Function) e
 	m.running[function.FunctionName] = uri
 
 	return nil
+}
+
+func buildEnvironment(function *domain.Function) []string {
+	environment := make([]string, 2)
+	environment[0] = "DOCKER_LAMBDA_STAY_OPEN=1"
+	environment[1] = "DOCKER_LAMBDA_WATCH=1"
+
+	if function.Environment == nil {
+		logger.Infof("Returning following environment for Function %s: %v", function.FunctionName, environment)
+		return environment
+	}
+
+	for key, value := range function.Environment.Variables {
+		environment = append(environment, key+"="+value)
+	}
+
+	logger.Infof("Returning following environment for Function %s: %v", function.FunctionName, environment)
+	return environment
 }
 
 func (m Manager) Invoke(writer http.ResponseWriter, request *http.Request) {

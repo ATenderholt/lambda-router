@@ -46,9 +46,17 @@ func (app App) Start() (err error) {
 	}
 
 	for _, function := range functions {
+		environment, e := app.functionRepo.GetEnvironmentForFunction(ctx, function)
+		if e != nil {
+			logger.Errorf("Unable to get Environment for Function %s: %v", function.FunctionName, e)
+			err = e
+			return
+		}
+		function.Environment = environment
+
 		err = app.docker.StartFunction(ctx, &function)
 		if err != nil {
-			logger.Error("Unable to start function %s", function)
+			logger.Errorf("Unable to start Function %s: %v", function.FunctionName, err)
 			return
 		}
 	}

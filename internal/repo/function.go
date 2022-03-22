@@ -22,7 +22,7 @@ func (f FunctionRepository) GetAllLatestFunctions(ctx context.Context) ([]domain
 
 	rows, err := f.db.QueryContext(
 		ctx,
-		`SELECT name, max(version), runtime, handler FROM lambda_function GROUP BY name`,
+		`SELECT id, name, max(version), runtime, handler FROM lambda_function GROUP BY name`,
 	)
 
 	var results []domain.Function
@@ -41,6 +41,7 @@ func (f FunctionRepository) GetAllLatestFunctions(ctx context.Context) ([]domain
 		var function domain.Function
 
 		err := rows.Scan(
+			&function.ID,
 			&function.FunctionName,
 			&function.Version,
 			&function.Runtime,
@@ -63,6 +64,8 @@ func (f FunctionRepository) GetAllLatestFunctions(ctx context.Context) ([]domain
 	logger.Infof("Found %d Functions.", len(results))
 	return results, nil
 }
+
+// TODO : switch to take DB statement?
 
 func (f FunctionRepository) GetEnvironmentForFunction(ctx context.Context, function domain.Function) (*aws.Environment, error) {
 	logger.Infof("Querying environment for Function %s.", function.FunctionName)
