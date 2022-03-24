@@ -22,6 +22,12 @@ var imageMap = map[aws.Runtime]string{
 	aws.Runtime("python3.10"): "mlupin/docker-lambda:python3.10",
 }
 
+type Docker interface {
+	EnsureImage(context.Context, string) error
+	Start(context.Context, dockerlib.Container, string) (chan bool, error)
+	ShutdownAll(ctx context.Context) error
+}
+
 // Manager is responsible for launching Docker containers hosting Lambda functions & their invocation
 type Manager struct {
 	cfg *settings.Config
@@ -32,7 +38,7 @@ type Manager struct {
 	// map of running lambdas (name) and their hostname:port
 	running map[string]string
 
-	docker dockerlib.Controller
+	docker Docker
 }
 
 func NewManager(cfg *settings.Config) (*Manager, error) {
@@ -45,7 +51,7 @@ func NewManager(cfg *settings.Config) (*Manager, error) {
 
 	return &Manager{
 		cfg:     cfg,
-		docker:  *docker,
+		docker:  docker,
 		ports:   ports,
 		running: running,
 	}, nil
