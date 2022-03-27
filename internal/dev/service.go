@@ -97,7 +97,14 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		return "", e
 	}
 
+	// wait until container shows Successfully installed
 	<-ready
+
+	// wait until container actually is shut down since it doesn't seem to be immediate
+	err = s.docker.WaitForShutdown(ctx, container, 10*time.Second)
+	if err != nil {
+		logger.Warnf("Unable to wait for %s to shutdown: %v", container.Name, err)
+	}
 
 	err = s.docker.Remove(ctx, container)
 	if err != nil {
