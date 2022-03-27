@@ -24,7 +24,7 @@ var imageMap = map[aws.Runtime]string{
 
 type Docker interface {
 	EnsureImage(context.Context, string) error
-	Start(context.Context, dockerlib.Container, string) (chan bool, error)
+	Start(context.Context, *dockerlib.Container, string) (chan bool, error)
 	ShutdownAll(ctx context.Context) error
 }
 
@@ -101,7 +101,7 @@ func (m Manager) StartFunction(ctx context.Context, function *domain.Function) e
 		},
 	}
 
-	_, err = m.docker.Start(ctx, container, "")
+	_, err = m.docker.Start(ctx, &container, "")
 	if err != nil {
 		msg := fmt.Sprintf("Unable to start Function %s: %v", function.FunctionName, err)
 		logger.Error(msg)

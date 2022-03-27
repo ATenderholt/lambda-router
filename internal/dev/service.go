@@ -51,7 +51,7 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		return "", err
 	}
 
-	temp := os.TempDir()
+	temp, err := os.MkdirTemp("", "lambda-build-*")
 	err = os.MkdirAll(temp, 0755)
 	if err != nil {
 		e := Error{"unable to make temp directory " + temp, err}
@@ -59,8 +59,15 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		return "", e
 	}
 
+	err = s.docker.EnsureImage(ctx, imageMap[runtime])
+	if err != nil {
+		e := Error{"unable to ensure image " + imageMap[runtime] + " exists", err}
+		logger.Error(e)
+		return "", e
+	}
+
 	container := dockerlib.Container{
-		Name:  filepath.Base(basePath) + "-deps",
+		Name:  filepath.Base(basePath) + "_deps",
 		Image: imageMap[runtime],
 		Mounts: []mount.Mount{
 			{
@@ -83,7 +90,7 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 
-	ready, err := s.docker.Start(timeoutCtx, container, "Successfully installed")
+	ready, err := s.docker.Start(timeoutCtx, &container, "Successfully installed")
 	if err != nil {
 		e := Error{"unable to start container to install dependencies for " + basePath, err}
 		logger.Error(e)
@@ -91,6 +98,11 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 	}
 
 	<-ready
+
+	err = s.docker.Remove(ctx, container)
+	if err != nil {
+		logger.Warnf("Unable to remove %s: %v", container.Name, err)
+	}
 
 	return temp, nil
 }
