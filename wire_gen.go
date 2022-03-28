@@ -8,6 +8,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/ATenderholt/dockerlib"
+	"github.com/ATenderholt/lambda-router/internal/dev"
 	"github.com/ATenderholt/lambda-router/internal/docker"
 	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/internal/http"
@@ -41,13 +43,20 @@ func InjectApp(cfg *settings.Config) (App, error) {
 	eventSourceHandler := http.NewEventSourceHandler(cfg, eventSourceRepository, functionRepository)
 	mux := http.NewChiMux(layerHandler, functionHandler, eventSourceHandler, manager)
 	sqsManager := sqs.NewManager(cfg, eventSourceRepository)
-	app := NewApp(cfg, mux, manager, sqsManager, functionRepository)
+	dockerController, err := dockerlib.NewDockerController()
+	if err != nil {
+		return App{}, err
+	}
+	service := dev.NewService(dockerController)
+	app := NewApp(cfg, mux, manager, sqsManager, functionRepository, service)
 	return app, nil
 }
 
 // inject.go:
 
-func NewApp(cfg *settings.Config, mux *chi.Mux, docker2 *docker.Manager, sqs2 *sqs.Manager, functionRepo domain.FunctionRepository) App {
+func NewApp(cfg *settings.Config, mux *chi.Mux, docker2 *docker.Manager, sqs2 *sqs.Manager,
+	functionRepo domain.FunctionRepository, devService *dev.Service) App {
+
 	srv := &http2.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
@@ -59,6 +68,7 @@ func NewApp(cfg *settings.Config, mux *chi.Mux, docker2 *docker.Manager, sqs2 *s
 		docker:       docker2,
 		sqs:          sqs2,
 		functionRepo: functionRepo,
+		devService:   devService,
 	}
 }
 

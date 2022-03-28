@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"github.com/ATenderholt/dockerlib"
+	"github.com/ATenderholt/lambda-router/internal/dev"
 	"github.com/ATenderholt/lambda-router/internal/docker"
 	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/internal/sqs"
@@ -34,6 +35,7 @@ type App struct {
 	functionRepo domain.FunctionRepository
 	docker       *docker.Manager
 	sqs          *sqs.Manager
+	devService   *dev.Service
 }
 
 func (app App) Start() (err error) {

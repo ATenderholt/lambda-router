@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/ATenderholt/dockerlib"
+	"github.com/ATenderholt/lambda-router/internal/dev"
 	"github.com/ATenderholt/lambda-router/internal/docker"
 	"github.com/ATenderholt/lambda-router/internal/domain"
 	handler "github.com/ATenderholt/lambda-router/internal/http"
@@ -17,7 +19,9 @@ import (
 	"net/http"
 )
 
-func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, sqs *sqs.Manager, functionRepo domain.FunctionRepository) App {
+func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, sqs *sqs.Manager,
+	functionRepo domain.FunctionRepository, devService *dev.Service) App {
+
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.BasePort),
 		Handler: mux,
@@ -29,6 +33,7 @@ func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, sqs *sqs
 		docker:       docker,
 		sqs:          sqs,
 		functionRepo: functionRepo,
+		devService:   devService,
 	}
 }
 
@@ -65,6 +70,8 @@ func InjectApp(cfg *settings.Config) (App, error) {
 		api,
 		docker.NewManager,
 		sqs.NewManager,
+		dev.NewService,
+		dockerlib.NewDockerController,
 	)
 	return App{}, nil
 }
