@@ -7,4 +7,5 @@ type DevFunction struct {
 	Runtime     string
 	BasePath    string `yaml:"basePath"`
 	Environment []string
+	DepPath     string
 }

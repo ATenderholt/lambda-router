@@ -66,8 +66,9 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		return "", e
 	}
 
+	name := filepath.Base(basePath)
 	container := dockerlib.Container{
-		Name:  filepath.Base(basePath) + "_deps",
+		Name:  name + "_deps",
 		Image: imageMap[runtime],
 		Mounts: []mount.Mount{
 			{
@@ -111,5 +112,17 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		logger.Warnf("Unable to remove %s: %v", container.Name, err)
 	}
 
+	s.tempPaths[name] = temp
+
 	return temp, nil
+}
+
+func (s *Service) CleanupAll() {
+	logger.Info("Cleaning up all temporary directories")
+	for _, path := range s.tempPaths {
+		err := os.RemoveAll(path)
+		if err != nil {
+			logger.Warnf("Unable to remove %s: %v", path, err)
+		}
+	}
 }
