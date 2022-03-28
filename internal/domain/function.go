@@ -77,6 +77,34 @@ type FunctionRepository interface {
 	UpsertFunctionEnvironment(ctx context.Context, function *Function, environment *aws.Environment) error
 }
 
+func (f Function) AwsRuntime() aws.Runtime {
+	return f.Runtime
+}
+
+func (f Function) EnvVars() []string {
+	environment := make([]string, 2)
+	environment[0] = "DOCKER_LAMBDA_STAY_OPEN=1"
+	environment[1] = "DOCKER_LAMBDA_WATCH=1"
+
+	if f.Environment == nil {
+		return environment
+	}
+
+	for key, value := range f.Environment.Variables {
+		environment = append(environment, key+"="+value)
+	}
+
+	return environment
+}
+
+func (f Function) HandlerCmd() []string {
+	return []string{f.Handler}
+}
+
+func (f Function) Name() string {
+	return f.FunctionName
+}
+
 func CreateFunction(input *lambda.CreateFunctionInput) *Function {
 	var deadLetterArn string
 	if input.DeadLetterConfig != nil {

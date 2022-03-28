@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ATenderholt/dockerlib"
-	"github.com/ATenderholt/lambda-router/internal/domain"
 	"github.com/ATenderholt/lambda-router/settings"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/docker/docker/api/types/mount"
@@ -26,6 +25,15 @@ type Docker interface {
 	EnsureImage(context.Context, string) error
 	Start(context.Context, *dockerlib.Container, string) (chan bool, error)
 	ShutdownAll(ctx context.Context) error
+}
+
+type Function interface {
+	Name() string
+	EnvVars() []string
+	HandlerCmd() []string
+	AwsRuntime() aws.Runtime
+	GetDestPath(cfg *settings.Config) string
+	GetLayerDestPath(cfg *settings.Config) string
 }
 
 // Manager is responsible for launching Docker containers hosting Lambda functions & their invocation
@@ -57,28 +65,31 @@ func NewManager(cfg *settings.Config) (*Manager, error) {
 	}, nil
 }
 
-func (m Manager) StartFunction(ctx context.Context, function *domain.Function) error {
+func (m Manager) StartFunction(ctx context.Context, function Function) error {
 	port, err := m.ports.Get(ctx)
 	if err != nil {
-		msg := fmt.Sprintf("Unable to start Function %s: %v", function.FunctionName, err)
+		msg := fmt.Sprintf("Unable to start Function %s: %v", function.Name(), err)
 		logger.Error(msg)
 		return errors.New(msg)
 	}
 
-	logger.Infof("Ensuring image exists for Function %s", function.FunctionName)
-	err = m.EnsureRuntime(ctx, function.Runtime)
+	logger.Infof("Ensuring image exists for Function %s", function.Name())
+	err = m.EnsureRuntime(ctx, function.AwsRuntime())
 	if err != nil {
-		msg := fmt.Sprintf("Unable to Ensure that Image exists for Function %s: %v", function.FunctionName, err)
+		msg := fmt.Sprintf("Unable to Ensure that Image exists for Function %s: %v", function.Name(), err)
 		logger.Error(msg)
 		return err
 	}
 
-	logger.Infof("Starting Function %s on port %d using handler %s", function.FunctionName, port, function.Handler)
+	logger.Infof("Starting Function %s on port %d using handler %v", function.Name(), port, function.HandlerCmd())
+
+	envVars := function.EnvVars()
+	logger.Infof("Using following environment variables for function %s: %v", function.Name(), envVars)
 
 	container := dockerlib.Container{
-		Name:    function.FunctionName,
-		Image:   imageMap[function.Runtime],
-		Command: []string{function.Handler},
+		Name:    function.Name(),
+		Image:   imageMap[function.AwsRuntime()],
+		Command: function.HandlerCmd(),
 		Mounts: []mount.Mount{
 			{
 				Source:      function.GetDestPath(m.cfg),
@@ -95,7 +106,7 @@ func (m Manager) StartFunction(ctx context.Context, function *domain.Function) e
 				Consistency: mount.ConsistencyDelegated,
 			},
 		},
-		Environment: buildEnvironment(function),
+		Environment: envVars,
 		Ports: map[int]int{
 			9001: port,
 		},
@@ -103,7 +114,7 @@ func (m Manager) StartFunction(ctx context.Context, function *domain.Function) e
 
 	_, err = m.docker.Start(ctx, &container, "")
 	if err != nil {
-		msg := fmt.Sprintf("Unable to start Function %s: %v", function.FunctionName, err)
+		msg := fmt.Sprintf("Unable to start Function %s: %v", function.Name(), err)
 		logger.Error(msg)
 		return errors.New(msg)
 	}
@@ -112,30 +123,12 @@ func (m Manager) StartFunction(ctx context.Context, function *domain.Function) e
 	if m.cfg.IsLocal {
 		uri = fmt.Sprintf("http://localhost:%d", port)
 	} else {
-		uri = fmt.Sprintf("http://%s:9001", function.FunctionName)
+		uri = fmt.Sprintf("http://%s:9001", function.Name())
 	}
 
-	m.running[function.FunctionName] = uri
+	m.running[function.Name()] = uri
 
 	return nil
-}
-
-func buildEnvironment(function *domain.Function) []string {
-	environment := make([]string, 2)
-	environment[0] = "DOCKER_LAMBDA_STAY_OPEN=1"
-	environment[1] = "DOCKER_LAMBDA_WATCH=1"
-
-	if function.Environment == nil {
-		logger.Infof("Returning following environment for Function %s: %v", function.FunctionName, environment)
-		return environment
-	}
-
-	for key, value := range function.Environment.Variables {
-		environment = append(environment, key+"="+value)
-	}
-
-	logger.Infof("Returning following environment for Function %s: %v", function.FunctionName, environment)
-	return environment
 }
 
 func (m Manager) Invoke(writer http.ResponseWriter, request *http.Request) {
