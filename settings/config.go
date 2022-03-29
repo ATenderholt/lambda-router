@@ -11,8 +11,9 @@ const (
 	DefaultAccountNumber = "271828182845"
 	DefaultRegion        = "us-west-2"
 
-	DefaultBasePort = 9050
-	DefaultDataPath = "data"
+	DefaultBasePort      = 9050
+	DefaultDataPath      = "data"
+	DefaultDevConfigFile = "functions.yml"
 
 	DefaultSqsEndpoint = "http://localhost:9324"
 )
@@ -28,7 +29,8 @@ type Config struct {
 	BasePort int
 	dataPath string
 
-	SqsEndpoint string
+	DevConfigFile string
+	SqsEndpoint   string
 }
 
 func (config *Config) ArnFragment() string {
@@ -82,6 +84,7 @@ func DefaultConfig() *Config {
 		Database:      DefaultDatabase(),
 		BasePort:      DefaultBasePort,
 		dataPath:      DefaultDataPath,
+		DevConfigFile: DefaultDevConfigFile,
 		SqsEndpoint:   DefaultSqsEndpoint,
 	}
 }

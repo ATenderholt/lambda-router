@@ -35,6 +35,7 @@ func TestExample(t *testing.T) {
 	}
 
 	assertThat(t, dev1).
+		HasName("dev-func1").
 		HasHandler("main.handler").
 		HasRuntime("python3.8").
 		HasBasePath("a/relative/path").
@@ -46,6 +47,7 @@ func TestExample(t *testing.T) {
 	}
 
 	assertThat(t, dev2).
+		HasName("dev-func2").
 		HasHandler("main.other_handler").
 		HasRuntime("python3.6").
 		HasBasePath("/an/absolute/path").
@@ -59,6 +61,15 @@ type DevFunctionAssertion struct {
 
 func assertThat(t *testing.T, actual domain.DevFunction) *DevFunctionAssertion {
 	return &DevFunctionAssertion{t: t, actual: actual}
+}
+
+func (d *DevFunctionAssertion) HasName(name string) *DevFunctionAssertion {
+	if d.actual.Name() != name {
+		d.t.Errorf("Expected name %s, but has %s", name, d.actual.Name())
+		d.t.Fail()
+	}
+
+	return d
 }
 
 func (d *DevFunctionAssertion) HasHandler(handler string) *DevFunctionAssertion {

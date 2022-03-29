@@ -15,6 +15,13 @@ func Parse(reader io.Reader) (map[string]domain.DevFunction, error) {
 		return nil, err
 	}
 
+	// Decorate results with name
+	for key, value := range results {
+		v := value
+		v.SetName("dev-" + key)
+		results[key] = v
+	}
+
 	return results, nil
 }
 

@@ -28,7 +28,7 @@ func NewApp(cfg *settings.Config, mux *chi.Mux, docker *docker.Manager, sqs *sqs
 	}
 
 	return App{
-		port:         cfg.BasePort,
+		cfg:          cfg,
 		srv:          srv,
 		docker:       docker,
 		sqs:          sqs,

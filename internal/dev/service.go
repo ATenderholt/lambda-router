@@ -52,9 +52,17 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 	}
 
 	temp, err := os.MkdirTemp("", "lambda-build-*")
-	err = os.MkdirAll(temp, 0755)
 	if err != nil {
 		e := Error{"unable to make temp directory " + temp, err}
+		logger.Error(e)
+		return "", e
+	}
+
+	// Mac returns things in /var which is symlinked to /private/var
+	// Only /private/var seems exposed in Docker Desktop
+	temp, err = filepath.EvalSymlinks(temp)
+	if err != nil {
+		e := Error{"unable to resolve symlinks for temp directory " + temp, err}
 		logger.Error(e)
 		return "", e
 	}

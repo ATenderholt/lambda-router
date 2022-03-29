@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"embed"
+	"errors"
+	"fmt"
 	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/lambda-router/internal/dev"
 	"github.com/ATenderholt/lambda-router/internal/docker"
@@ -30,7 +32,7 @@ func init() {
 }
 
 type App struct {
-	port         int
+	cfg          *settings.Config
 	srv          *http.Server
 	functionRepo domain.FunctionRepository
 	docker       *docker.Manager
@@ -63,9 +65,14 @@ func (app App) Start() (err error) {
 		}
 	}
 
+	err = app.StartDevFunctions(ctx)
+	if err != nil {
+		logger.Errorf("Unable to start Dev functions: %v", err)
+	}
+
 	err = app.sqs.StartAllEventSources(ctx)
 	if err != nil {
-		logger.Error("Unable to start Event sources: %v", err)
+		logger.Errorf("Unable to start Event sources: %v", err)
 		return
 	}
 
@@ -77,8 +84,42 @@ func (app App) Start() (err error) {
 		}
 	}()
 
-	logger.Infof("Finished starting HTTP server on port %d", app.port)
+	logger.Infof("Finished starting HTTP server on port %d", app.cfg.BasePort)
 	return
+}
+
+func (app App) StartDevFunctions(ctx context.Context) error {
+	stats, err := os.Stat(app.cfg.DevConfigFile)
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		logger.Infof("Config file for Dev Functions doesn't exist, so not starting any.")
+		return nil
+	case err != nil:
+		logger.Errorf("Unexpected error when getting info about Dev Functions file: %v", err)
+		return err
+	}
+
+	if stats.IsDir() {
+		err := fmt.Errorf("config file specified for Dev Functions is a directory: %s", app.cfg.DevConfigFile)
+		logger.Error(err)
+		return err
+	}
+
+	functions, err := dev.ParseFile(app.cfg.DevConfigFile)
+	if err != nil {
+		e := fmt.Errorf("unable to parse Dev Functions file: %v", err)
+		logger.Error(e)
+		return e
+	}
+
+	for _, function := range functions {
+		err = app.docker.StartFunction(ctx, function)
+		if err != nil {
+			logger.Errorf("unable to start Dev Function %s: %v", function.Name(), err)
+		}
+	}
+
+	return nil
 }
 
 func (app App) Shutdown() error {
