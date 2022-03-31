@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -114,6 +115,26 @@ func (app App) StartDevFunctions(ctx context.Context) error {
 	}
 
 	for _, function := range functions {
+		var basePath string
+		if filepath.IsAbs(function.BasePath) {
+			basePath = function.BasePath
+		} else {
+			configPath, err := filepath.Abs(app.cfg.DevConfigFile)
+			if err != nil {
+				logger.Errorf("unable to get absolute path of config file %s: %v", app.cfg.DevConfigFile, err)
+				continue
+			}
+
+			basePath = filepath.Join(filepath.Dir(configPath), function.BasePath)
+		}
+
+		dir, err := app.devService.InstallDependencies(ctx, function.Runtime, basePath)
+		if err != nil {
+			logger.Errorf("unable to install dependencies for Dev Function %s: %v", function.Name(), err)
+			continue
+		}
+
+		function.DepPath = dir
 		err = app.docker.StartFunction(ctx, function)
 		if err != nil {
 			logger.Errorf("unable to start Dev Function %s: %v", function.Name(), err)
@@ -150,7 +171,7 @@ func main() {
 		fmt.Println("output:\n", output)
 		os.Exit(1)
 	}
-	
+
 	mainCtx := context.Background()
 
 	dockerlib.SetLogger(logging.NewLogger().Desugar().Named("dockerlib"))

@@ -55,7 +55,7 @@ func (d DevFunction) GetDestPath(cfg *settings.Config) string {
 		panic(err)
 	}
 
-	return filepath.Join(base, d.BasePath)
+	return filepath.Join(filepath.Dir(base), d.BasePath)
 }
 
 func (d DevFunction) GetLayerDestPath(cfg *settings.Config) string {

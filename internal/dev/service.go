@@ -32,13 +32,38 @@ func NewService(docker *dockerlib.DockerController) *Service {
 	}
 }
 
+func mkTempDir() (string, error) {
+	temp, err := os.MkdirTemp("", "lambda-build-*")
+	if err != nil {
+		e := Error{"unable to make temp directory " + temp, err}
+		logger.Error(e)
+		return "", e
+	}
+
+	// Mac returns things in /var which is symlinked to /private/var
+	// Only /private/var seems exposed in Docker Desktop
+	temp2, err := filepath.EvalSymlinks(temp)
+	if err != nil {
+		e := Error{"unable to resolve symlinks for temp directory " + temp, err}
+		logger.Error(e)
+		return temp, e
+	}
+
+	return temp2, nil
+}
+
 func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath string) (string, error) {
+	temp, err := mkTempDir()
+	if err != nil {
+		return "", err
+	}
+
 	path := filepath.Join(basePath, Requirements)
 	stats, err := os.Stat(path)
 	switch {
 	case os.IsExist(err):
 		logger.Infof("Requirements file not found in %s", basePath)
-		return "", nil
+		return temp, nil
 	case err != nil:
 		e := Error{"unable to determine if Requirements file exists", err}
 		logger.Error(e)
@@ -49,22 +74,6 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		err := fmt.Errorf("path to requirements file (%s) is a directory", path)
 		logger.Error(err)
 		return "", err
-	}
-
-	temp, err := os.MkdirTemp("", "lambda-build-*")
-	if err != nil {
-		e := Error{"unable to make temp directory " + temp, err}
-		logger.Error(e)
-		return "", e
-	}
-
-	// Mac returns things in /var which is symlinked to /private/var
-	// Only /private/var seems exposed in Docker Desktop
-	temp, err = filepath.EvalSymlinks(temp)
-	if err != nil {
-		e := Error{"unable to resolve symlinks for temp directory " + temp, err}
-		logger.Error(e)
-		return "", e
 	}
 
 	err = s.docker.EnsureImage(ctx, imageMap[runtime])
@@ -93,7 +102,7 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 			},
 		},
 		Ports:   nil,
-		Command: []string{"pip", "install", "-r", "/work/requirements.txt", "-t", "/build"},
+		Command: []string{"pip", "install", "-r", "/work/requirements.txt", "-t", "/build/python"},
 	}
 
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute)

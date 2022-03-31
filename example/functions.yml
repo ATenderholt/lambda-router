@@ -1,0 +1,8 @@
+client:
+  runtime: python3.8
+  handler: main.handle
+  basePath: client
+hello:
+  runtime: python3.9
+  handler: main.handle
+  basePath: hello
