@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"errors"
+	"flag"
 	"fmt"
 	"github.com/ATenderholt/dockerlib"
 	"github.com/ATenderholt/lambda-router/internal/dev"
@@ -140,7 +141,16 @@ func (app App) Shutdown() error {
 }
 
 func main() {
-	cfg := settings.DefaultConfig()
+	cfg, output, err := settings.FromFlags(os.Args[0], os.Args[1:])
+	if err == flag.ErrHelp {
+		fmt.Println(output)
+		os.Exit(2)
+	} else if err != nil {
+		fmt.Println("got error:", err)
+		fmt.Println("output:\n", output)
+		os.Exit(1)
+	}
+	
 	mainCtx := context.Background()
 
 	dockerlib.SetLogger(logging.NewLogger().Desugar().Named("dockerlib"))

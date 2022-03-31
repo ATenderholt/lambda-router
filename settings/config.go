@@ -1,7 +1,9 @@
 package settings
 
 import (
+	"bytes"
 	"database/sql"
+	"flag"
 	"log"
 	"os"
 	"path/filepath"
@@ -87,4 +89,31 @@ func DefaultConfig() *Config {
 		DevConfigFile: DefaultDevConfigFile,
 		SqsEndpoint:   DefaultSqsEndpoint,
 	}
+}
+
+func FromFlags(name string, args []string) (*Config, string, error) {
+	flags := flag.NewFlagSet(name, flag.ContinueOnError)
+
+	var buf bytes.Buffer
+	flags.SetOutput(&buf)
+
+	var cfg Config
+	cfg.Database = DefaultDatabase()
+
+	flags.StringVar(&cfg.AccountNumber, "account-number", DefaultAccountNumber, "Account number returned in ARNs")
+	flags.BoolVar(&cfg.IsDebug, "debug", false, "Enable debug logging")
+	flags.BoolVar(&cfg.IsLocal, "local", true, "Application should use localhost when routing lambda")
+	flags.StringVar(&cfg.Region, "region", DefaultRegion, "Region returned in ARNs")
+	flags.IntVar(&cfg.BasePort, "port", DefaultBasePort, "Port used for HTTP and start of port range for individual lambdas")
+	flags.StringVar(&cfg.dataPath, "data-path", DefaultDataPath, "Path to persist data and lambdas")
+	flags.StringVar(&cfg.DevConfigFile, "config", DefaultDevConfigFile, "Config file for starting lambdas in Development mode")
+	flags.StringVar(&cfg.SqsEndpoint, "sqs-endpoint", DefaultSqsEndpoint, "Endpoint for SQS services (i.e. lambda triggers)")
+	flags.StringVar(&cfg.Database.Filename, "db", DefaultDbFilename, "Database file for persisting lambda configuration")
+
+	err := flags.Parse(args)
+	if err != nil {
+		return nil, buf.String(), err
+	}
+
+	return &cfg, buf.String(), err
 }

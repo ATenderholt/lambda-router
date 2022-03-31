@@ -17,7 +17,7 @@ type Database struct {
 
 func (db *Database) connectionString(basePath string) string {
 	if db.Filename == InMemoryDbFilename {
-		return fmt.Sprintf("file:%s", db.Filename, db.Options)
+		return fmt.Sprintf("file:%s%s", db.Filename, db.Options)
 	}
 
 	path := filepath.Join(basePath, db.Filename)
