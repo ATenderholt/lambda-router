@@ -53,15 +53,17 @@ func mkTempDir() (string, error) {
 }
 
 func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath string) (string, error) {
+	name := filepath.Base(basePath)
 	temp, err := mkTempDir()
 	if err != nil {
 		return "", err
 	}
+	s.tempPaths[name] = temp
 
 	path := filepath.Join(basePath, Requirements)
 	stats, err := os.Stat(path)
 	switch {
-	case os.IsExist(err):
+	case os.IsNotExist(err):
 		logger.Infof("Requirements file not found in %s", basePath)
 		return temp, nil
 	case err != nil:
@@ -83,7 +85,6 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		return "", e
 	}
 
-	name := filepath.Base(basePath)
 	container := dockerlib.Container{
 		Name:  name + "_deps",
 		Image: imageMap[runtime],
@@ -128,9 +129,7 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 	if err != nil {
 		logger.Warnf("Unable to remove %s: %v", container.Name, err)
 	}
-
-	s.tempPaths[name] = temp
-
+	
 	return temp, nil
 }
 
