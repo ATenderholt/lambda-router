@@ -40,14 +40,15 @@ func (config *Config) ArnFragment() string {
 }
 
 func (config *Config) CreateDatabase() *sql.DB {
-	db, err := sql.Open("sqlite3", config.DbConnectionString())
+	connStr := config.DbConnectionString()
+	db, err := sql.Open("sqlite3", connStr)
 	if err != nil {
-		log.Panicf("unable to open database: %v", err)
+		log.Panicf("unable to open database %s: %v", connStr, err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Panicf("unable to ping database: %v", err)
+		log.Panicf("unable to ping database %s: %v", connStr, err)
 	}
 
 	return db
@@ -98,8 +99,7 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 	flags.SetOutput(&buf)
 
 	var cfg Config
-	cfg.Database = DefaultDatabase()
-
+	var dbFileName string
 	flags.StringVar(&cfg.AccountNumber, "account-number", DefaultAccountNumber, "Account number returned in ARNs")
 	flags.BoolVar(&cfg.IsDebug, "debug", false, "Enable debug logging")
 	flags.BoolVar(&cfg.IsLocal, "local", true, "Application should use localhost when routing lambda")
@@ -108,12 +108,15 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 	flags.StringVar(&cfg.dataPath, "data-path", DefaultDataPath, "Path to persist data and lambdas")
 	flags.StringVar(&cfg.DevConfigFile, "config", DefaultDevConfigFile, "Config file for starting lambdas in Development mode")
 	flags.StringVar(&cfg.SqsEndpoint, "sqs-endpoint", DefaultSqsEndpoint, "Endpoint for SQS services (i.e. lambda triggers)")
-	flags.StringVar(&cfg.Database.Filename, "db", DefaultDbFilename, "Database file for persisting lambda configuration")
+	flags.StringVar(&dbFileName, "db", DefaultDbFilename, "Database file for persisting lambda configuration")
 
 	err := flags.Parse(args)
 	if err != nil {
 		return nil, buf.String(), err
 	}
+
+	cfg.Database = DefaultDatabase()
+	cfg.Database.Filename = dbFileName
 
 	return &cfg, buf.String(), err
 }
