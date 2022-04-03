@@ -63,3 +63,19 @@ func TestSetPortSqsAndDevFile(t *testing.T) {
 	expected.DevConfigFile = "testdata/functions.yml"
 	assert.Equal(t, cfg, expected)
 }
+
+func TestSetNetworks(t *testing.T) {
+	cfg, output, err := settings.FromFlags("lambda-router", []string{
+		"-networks", "sqs,s3,lambda",
+	})
+
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	assert.Empty(t, output)
+
+	expected := settings.DefaultConfig()
+	expected.Networks = []string{"sqs", "s3", "lambda"}
+	assert.Equal(t, cfg, expected)
+}

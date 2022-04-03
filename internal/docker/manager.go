@@ -110,6 +110,7 @@ func (m Manager) StartFunction(ctx context.Context, function Function) error {
 		Ports: map[int]int{
 			9001: port,
 		},
+		Network: m.cfg.Networks,
 	}
 
 	_, err = m.docker.Start(ctx, &container, "")

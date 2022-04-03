@@ -7,17 +7,19 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
 	DefaultAccountNumber = "271828182845"
 	DefaultRegion        = "us-west-2"
 
-	DefaultBasePort      = 9050
-	DefaultDataPath      = "data"
-	DefaultDevConfigFile = "functions.yml"
+	DefaultBasePort = 9050
+	DefaultDataPath = "data"
 
-	DefaultSqsEndpoint = "http://localhost:9324"
+	DefaultDevConfigFile = "functions.yml"
+	DefaultSqsEndpoint   = "http://localhost:9324"
+	DefaultNetworks      = "lambda"
 )
 
 type Config struct {
@@ -32,6 +34,7 @@ type Config struct {
 	dataPath string
 
 	DevConfigFile string
+	Networks      []string
 	SqsEndpoint   string
 }
 
@@ -89,7 +92,25 @@ func DefaultConfig() *Config {
 		dataPath:      DefaultDataPath,
 		DevConfigFile: DefaultDevConfigFile,
 		SqsEndpoint:   DefaultSqsEndpoint,
+		Networks:      []string{DefaultNetworks},
 	}
+}
+
+type NetworkValue struct {
+	networks []string
+}
+
+func (v *NetworkValue) Set(s string) error {
+	v.networks = strings.Split(s, ",")
+	return nil
+}
+
+func (v *NetworkValue) String() string {
+	if len(v.networks) > 0 {
+		return strings.Join(v.networks, ",")
+	}
+
+	return ""
 }
 
 func FromFlags(name string, args []string) (*Config, string, error) {
@@ -100,6 +121,7 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 
 	var cfg Config
 	var dbFileName string
+	networks := NetworkValue{[]string{DefaultNetworks}}
 	flags.StringVar(&cfg.AccountNumber, "account-number", DefaultAccountNumber, "Account number returned in ARNs")
 	flags.BoolVar(&cfg.IsDebug, "debug", false, "Enable debug logging")
 	flags.BoolVar(&cfg.IsLocal, "local", true, "Application should use localhost when routing lambda")
@@ -108,6 +130,7 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 	flags.StringVar(&cfg.dataPath, "data-path", DefaultDataPath, "Path to persist data and lambdas")
 	flags.StringVar(&cfg.DevConfigFile, "config", DefaultDevConfigFile, "Config file for starting lambdas in Development mode")
 	flags.StringVar(&cfg.SqsEndpoint, "sqs-endpoint", DefaultSqsEndpoint, "Endpoint for SQS services (i.e. lambda triggers)")
+	flags.Var(&networks, "networks", "Comma-separated list of Networks for lambda containers")
 	flags.StringVar(&dbFileName, "db", DefaultDbFilename, "Database file for persisting lambda configuration")
 
 	err := flags.Parse(args)
@@ -117,6 +140,7 @@ func FromFlags(name string, args []string) (*Config, string, error) {
 
 	cfg.Database = DefaultDatabase()
 	cfg.Database.Filename = dbFileName
+	cfg.Networks = networks.networks
 
 	return &cfg, buf.String(), err
 }
