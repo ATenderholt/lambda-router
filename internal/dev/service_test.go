@@ -3,7 +3,7 @@ package dev_test
 import (
 	"context"
 	"github.com/ATenderholt/dockerlib"
-	"github.com/ATenderholt/lambda-router/internal/dev"
+	"github.com/ATenderholt/rainbow-functions/internal/dev"
 	"os"
 	"path/filepath"
 	"testing"

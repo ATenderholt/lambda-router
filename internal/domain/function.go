@@ -2,7 +2,7 @@ package domain
 
 import (
 	"context"
-	"github.com/ATenderholt/lambda-router/settings"
+	"github.com/ATenderholt/rainbow-functions/settings"
 	"github.com/aws/aws-sdk-go-v2/service/lambda"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/smithy-go/middleware"

@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/ATenderholt/lambda-router/internal/docker"
+	"github.com/ATenderholt/rainbow-functions/internal/docker"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )

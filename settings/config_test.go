@@ -1,7 +1,7 @@
 package settings_test
 
 import (
-	"github.com/ATenderholt/lambda-router/settings"
+	"github.com/ATenderholt/rainbow-functions/settings"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

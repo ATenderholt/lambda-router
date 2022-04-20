@@ -1,8 +1,8 @@
 package dev_test
 
 import (
-	"github.com/ATenderholt/lambda-router/internal/dev"
-	"github.com/ATenderholt/lambda-router/internal/domain"
+	"github.com/ATenderholt/rainbow-functions/internal/dev"
+	"github.com/ATenderholt/rainbow-functions/internal/domain"
 	"strings"
 	"testing"
 )

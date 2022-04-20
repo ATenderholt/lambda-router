@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/ATenderholt/lambda-router/internal/domain"
-	"github.com/ATenderholt/lambda-router/pkg/database"
+	"github.com/ATenderholt/rainbow-functions/internal/domain"
+	"github.com/ATenderholt/rainbow-functions/pkg/database"
 	"github.com/google/uuid"
 )
 

@@ -3,8 +3,8 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ATenderholt/lambda-router/internal/domain"
-	"github.com/ATenderholt/lambda-router/settings"
+	"github.com/ATenderholt/rainbow-functions/internal/domain"
+	"github.com/ATenderholt/rainbow-functions/settings"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"net/http"
 	"os"

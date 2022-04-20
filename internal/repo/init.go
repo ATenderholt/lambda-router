@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"github.com/ATenderholt/lambda-router/logging"
+	"github.com/ATenderholt/rainbow-functions/logging"
 	"go.uber.org/zap"
 )
 

@@ -1,7 +1,7 @@
 package dev
 
 import (
-	"github.com/ATenderholt/lambda-router/internal/domain"
+	"github.com/ATenderholt/rainbow-functions/internal/domain"
 	"gopkg.in/yaml.v2"
 	"io"
 	"os"

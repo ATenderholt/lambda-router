@@ -1,4 +1,4 @@
-module github.com/ATenderholt/lambda-router
+module github.com/ATenderholt/rainbow-functions
 
 go 1.17
 

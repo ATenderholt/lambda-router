@@ -2,7 +2,7 @@ package docker_test
 
 import (
 	"context"
-	"github.com/ATenderholt/lambda-router/internal/docker"
+	"github.com/ATenderholt/rainbow-functions/internal/docker"
 	"testing"
 )
 

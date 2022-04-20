@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"github.com/ATenderholt/lambda-router/settings"
+	"github.com/ATenderholt/rainbow-functions/settings"
 	aws "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"path/filepath"
 )
