@@ -57,6 +57,12 @@ func main() {
 func start(ctx context.Context, config *settings.Config) error {
 	logger.Info("Starting up ...")
 
+	err := os.MkdirAll(config.DataPath(), 0755)
+	if err != nil {
+		logger.Errorf("Unable to make data directory: %v", err)
+		return err
+	}
+	
 	initializeDb(config)
 
 	app, err := InjectApp(config)
