@@ -3,7 +3,7 @@ module github.com/ATenderholt/rainbow-functions
 go 1.17
 
 require (
-	github.com/ATenderholt/dockerlib v1.2.1
+	github.com/ATenderholt/dockerlib v1.3.0
 	github.com/aws/aws-sdk-go-v2 v1.15.0
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.20.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.18.0
