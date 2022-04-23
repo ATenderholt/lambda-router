@@ -11,6 +11,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 )
 
 var imageMap = map[aws.Runtime]string{
@@ -23,6 +25,7 @@ var imageMap = map[aws.Runtime]string{
 
 type Docker interface {
 	EnsureImage(context.Context, string) error
+	GetContainerHostPath(context.Context, string, string) (string, error)
 	Start(context.Context, *dockerlib.Container, string) (chan bool, error)
 	ShutdownAll(ctx context.Context) error
 }
@@ -86,20 +89,38 @@ func (m Manager) StartFunction(ctx context.Context, function Function) error {
 	envVars := function.EnvVars()
 	logger.Infof("Using following environment variables for function %s: %v", function.Name(), envVars)
 
+	basePath := m.cfg.DataPath()
+	destPath := function.GetDestPath(m.cfg)
+	layerDestPath := function.GetLayerDestPath(m.cfg)
+	if !m.cfg.IsLocal {
+		containerName := os.Getenv("NAME")
+		logger.Infof("Getting source for mount %s in container %s", basePath, containerName)
+		hostPath, err := m.docker.GetContainerHostPath(ctx, containerName, basePath)
+
+		if err != nil {
+			e := fmt.Errorf("unable to get host path for %s: %v", m.cfg.DataPath(), err)
+			logger.Error(e)
+			return e
+		}
+
+		destPath = strings.Replace(destPath, basePath, hostPath, 1)
+		layerDestPath = strings.Replace(layerDestPath, basePath, hostPath, 1)
+	}
+
 	container := dockerlib.Container{
 		Name:    function.Name(),
 		Image:   imageMap[function.AwsRuntime()],
 		Command: function.HandlerCmd(),
 		Mounts: []mount.Mount{
 			{
-				Source:      function.GetDestPath(m.cfg),
+				Source:      destPath,
 				Target:      "/var/task",
 				Type:        mount.TypeBind,
 				ReadOnly:    true,
 				Consistency: mount.ConsistencyDelegated,
 			},
 			{
-				Source:      function.GetLayerDestPath(m.cfg),
+				Source:      layerDestPath,
 				Target:      "/opt",
 				Type:        mount.TypeBind,
 				ReadOnly:    true,
