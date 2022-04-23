@@ -6,10 +6,13 @@ ADD . /go/src/app
 
 RUN go get -d -v ./...
 
-RUN go build -o /go/bin/app
+RUN go build -o /go/bin/app /go/src/app/cmd/functions
 
 # Now copy it into our base image.
 FROM gcr.io/distroless/base-debian11:debug
 COPY --from=build /go/bin/app /
-ENTRYPOINT ["/app"]
-CMD ["-local=false"]
+
+ENV NAME=rainbow-functions
+EXPOSE 9050
+
+ENTRYPOINT ["/app", "-local=false", "-data-path", "/data"]
