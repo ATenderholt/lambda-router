@@ -19,7 +19,7 @@ const (
 
 	DefaultDevConfigFile = "functions.yml"
 	DefaultSqsEndpoint   = "http://localhost:9324"
-	DefaultNetworks      = "lambda"
+	DefaultNetworks      = "rainbow"
 )
 
 type Config struct {
