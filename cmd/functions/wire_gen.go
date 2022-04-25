@@ -47,7 +47,7 @@ func InjectApp(cfg *settings.Config) (App, error) {
 	if err != nil {
 		return App{}, err
 	}
-	service := dev.NewService(dockerController)
+	service := dev.NewService(cfg, dockerController)
 	app := NewApp(cfg, mux, manager, sqsManager, functionRepository, service)
 	return app, nil
 }

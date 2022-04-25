@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/ATenderholt/dockerlib"
+	"github.com/ATenderholt/rainbow-functions/settings"
 	"github.com/docker/docker/api/types/mount"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -21,12 +23,14 @@ var imageMap = map[string]string{
 }
 
 type Service struct {
+	cfg       *settings.Config
 	docker    *dockerlib.DockerController
 	tempPaths map[string]string
 }
 
-func NewService(docker *dockerlib.DockerController) *Service {
+func NewService(cfg *settings.Config, docker *dockerlib.DockerController) *Service {
 	return &Service{
+		cfg:       cfg,
 		docker:    docker,
 		tempPaths: make(map[string]string),
 	}
@@ -85,13 +89,28 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 		return "", e
 	}
 
+	containerPath := basePath
+	if !s.cfg.IsLocal {
+		containerName := os.Getenv("NAME")
+		logger.Infof("Getting source for mount %s in container %s", s.cfg.DataPath(), containerName)
+		hostPath, err := s.docker.GetContainerHostPath(ctx, containerName, s.cfg.DataPath())
+
+		if err != nil {
+			e := fmt.Errorf("unable to get host path for %s: %v", s.cfg.DataPath(), err)
+			logger.Error(e)
+			return "", e
+		}
+
+		containerPath = strings.Replace(containerPath, s.cfg.DataPath(), hostPath, 1)
+	}
+
 	container := dockerlib.Container{
 		Name:  name + "_deps",
 		Image: imageMap[runtime],
 		Mounts: []mount.Mount{
 			{
 				Type:     mount.TypeBind,
-				Source:   basePath,
+				Source:   containerPath,
 				Target:   "/work",
 				ReadOnly: true,
 			},
@@ -129,7 +148,7 @@ func (s *Service) InstallDependencies(ctx context.Context, runtime, basePath str
 	if err != nil {
 		logger.Warnf("Unable to remove %s: %v", container.Name, err)
 	}
-	
+
 	return temp, nil
 }
 
